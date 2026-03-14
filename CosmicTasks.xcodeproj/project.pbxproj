@@ -1,0 +1,352 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		12916D5A68DEB95E6C3F2E26 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD194A33D5E1B25FC60D5CE /* StatusBarController.swift */; };
+		167FEE81C07123D5D453A01F /* StarfieldNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A61F8BEE61D5382D2D9C1211 /* StarfieldNode.swift */; };
+		210CA68C563ED1FB077E69F3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F47F3BA387E9C1C6FBD51D /* AppDelegate.swift */; };
+		41A2D8645B0DC503759CE9E7 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFCC271B3AD0D5C18D90E09C /* Constants.swift */; };
+		5BD5C6FD3B8D18C4EE80B59B /* CosmicTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3057CBE30D63E28970AA5E36 /* CosmicTask.swift */; };
+		643C31D4DC789CC3F47F6F90 /* MeteorNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBC8B08237A3F5794C4A493 /* MeteorNode.swift */; };
+		78D6E86BEA36D66C4457F557 /* ExplosionEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0075A7CC00FC9A5D88DB533 /* ExplosionEffect.swift */; };
+		85B01ADD1D17ABB417B335B7 /* TaskPopoverNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FBD3AF14AEFDAFDC24FC04 /* TaskPopoverNode.swift */; };
+		AC1B50D99F34854E14E3D027 /* PlanetNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE4504F0ECE9AF6D33124314 /* PlanetNode.swift */; };
+		BB2C5FA434B658FE6032EBB4 /* TaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3FF74B8C5E0ED130A56FE02 /* TaskManager.swift */; };
+		D4A20017E8E9F49BFEAF2162 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64477D2B8F9054690B707C24 /* main.swift */; };
+		EBCCF1D3D4661BE636F4A240 /* CosmicScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FD83C45F61585E12F7B0273 /* CosmicScene.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		02FBD3AF14AEFDAFDC24FC04 /* TaskPopoverNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPopoverNode.swift; sourceTree = "<group>"; };
+		3057CBE30D63E28970AA5E36 /* CosmicTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicTask.swift; sourceTree = "<group>"; };
+		64477D2B8F9054690B707C24 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		79F47F3BA387E9C1C6FBD51D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		8BBC8B08237A3F5794C4A493 /* MeteorNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeteorNode.swift; sourceTree = "<group>"; };
+		8DD194A33D5E1B25FC60D5CE /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		8FD83C45F61585E12F7B0273 /* CosmicScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmicScene.swift; sourceTree = "<group>"; };
+		9360D29DDC73AEB8B00CB37A /* CosmicTasks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CosmicTasks.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A61F8BEE61D5382D2D9C1211 /* StarfieldNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarfieldNode.swift; sourceTree = "<group>"; };
+		C3FF74B8C5E0ED130A56FE02 /* TaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskManager.swift; sourceTree = "<group>"; };
+		DFCC271B3AD0D5C18D90E09C /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		E0075A7CC00FC9A5D88DB533 /* ExplosionEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExplosionEffect.swift; sourceTree = "<group>"; };
+		EE4504F0ECE9AF6D33124314 /* PlanetNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanetNode.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0A00BEB18D97A1393CA771DE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				79F47F3BA387E9C1C6FBD51D /* AppDelegate.swift */,
+				64477D2B8F9054690B707C24 /* main.swift */,
+				8DD194A33D5E1B25FC60D5CE /* StatusBarController.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		186602085CE639EEC1B30BE0 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				0A00BEB18D97A1393CA771DE /* App */,
+				F59A7C279A471B967F4A94E6 /* Helpers */,
+				B84BC694B2709125C017FE6F /* Models */,
+				9D63BF4A2F9DBD81AA13EB65 /* Scene */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		33A39E2679C5F4029762CD0B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9360D29DDC73AEB8B00CB37A /* CosmicTasks.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9361484E306116795E8A34B1 = {
+			isa = PBXGroup;
+			children = (
+				186602085CE639EEC1B30BE0 /* Sources */,
+				33A39E2679C5F4029762CD0B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9D63BF4A2F9DBD81AA13EB65 /* Scene */ = {
+			isa = PBXGroup;
+			children = (
+				8FD83C45F61585E12F7B0273 /* CosmicScene.swift */,
+				E0075A7CC00FC9A5D88DB533 /* ExplosionEffect.swift */,
+				8BBC8B08237A3F5794C4A493 /* MeteorNode.swift */,
+				EE4504F0ECE9AF6D33124314 /* PlanetNode.swift */,
+				A61F8BEE61D5382D2D9C1211 /* StarfieldNode.swift */,
+				02FBD3AF14AEFDAFDC24FC04 /* TaskPopoverNode.swift */,
+			);
+			path = Scene;
+			sourceTree = "<group>";
+		};
+		B84BC694B2709125C017FE6F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				3057CBE30D63E28970AA5E36 /* CosmicTask.swift */,
+				C3FF74B8C5E0ED130A56FE02 /* TaskManager.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F59A7C279A471B967F4A94E6 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				DFCC271B3AD0D5C18D90E09C /* Constants.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4C90896A7C6399E9EEA66DA5 /* CosmicTasks */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B9E4E68218EBF86F2A0F780E /* Build configuration list for PBXNativeTarget "CosmicTasks" */;
+			buildPhases = (
+				0D4B8216F4B717CD448DD991 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CosmicTasks;
+			packageProductDependencies = (
+			);
+			productName = CosmicTasks;
+			productReference = 9360D29DDC73AEB8B00CB37A /* CosmicTasks.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2CE351D1B286F72D23629591 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 44FC99F643EFFD1555A6030D /* Build configuration list for PBXProject "CosmicTasks" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9361484E306116795E8A34B1;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 33A39E2679C5F4029762CD0B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4C90896A7C6399E9EEA66DA5 /* CosmicTasks */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0D4B8216F4B717CD448DD991 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				210CA68C563ED1FB077E69F3 /* AppDelegate.swift in Sources */,
+				41A2D8645B0DC503759CE9E7 /* Constants.swift in Sources */,
+				EBCCF1D3D4661BE636F4A240 /* CosmicScene.swift in Sources */,
+				5BD5C6FD3B8D18C4EE80B59B /* CosmicTask.swift in Sources */,
+				78D6E86BEA36D66C4457F557 /* ExplosionEffect.swift in Sources */,
+				643C31D4DC789CC3F47F6F90 /* MeteorNode.swift in Sources */,
+				AC1B50D99F34854E14E3D027 /* PlanetNode.swift in Sources */,
+				167FEE81C07123D5D453A01F /* StarfieldNode.swift in Sources */,
+				12916D5A68DEB95E6C3F2E26 /* StatusBarController.swift in Sources */,
+				BB2C5FA434B658FE6032EBB4 /* TaskManager.swift in Sources */,
+				85B01ADD1D17ABB417B335B7 /* TaskPopoverNode.swift in Sources */,
+				D4A20017E8E9F49BFEAF2162 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3A196D4CD1764F26A916DE62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		402FC61ED1AEC472E01FDB01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		A815BED86932FA123C964FEC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/CosmicTasks.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.cosmictasks.app;
+				PRODUCT_NAME = CosmicTasks;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		B4D41F4515066094CF11DC90 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/CosmicTasks.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.cosmictasks.app;
+				PRODUCT_NAME = CosmicTasks;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		44FC99F643EFFD1555A6030D /* Build configuration list for PBXProject "CosmicTasks" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A196D4CD1764F26A916DE62 /* Debug */,
+				402FC61ED1AEC472E01FDB01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B9E4E68218EBF86F2A0F780E /* Build configuration list for PBXNativeTarget "CosmicTasks" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B4D41F4515066094CF11DC90 /* Debug */,
+				A815BED86932FA123C964FEC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2CE351D1B286F72D23629591 /* Project object */;
+}
