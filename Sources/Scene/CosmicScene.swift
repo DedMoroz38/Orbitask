@@ -24,18 +24,6 @@ class CosmicScene: SKScene {
         // Listen for task changes
         NotificationCenter.default.addObserver(self, selector: #selector(tasksDidChange), name: .tasksDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(taskWasCompleted(_:)), name: .taskCompleted, object: nil)
-
-        // Enable mouse tracking
-        view.window?.acceptsMouseMovedEvents = true
-
-        // Add tracking area covering the full view
-        let trackingArea = NSTrackingArea(
-            rect: view.bounds,
-            options: [.mouseMoved, .activeAlways, .inVisibleRect, .mouseEnteredAndExited],
-            owner: self,
-            userInfo: nil
-        )
-        view.addTrackingArea(trackingArea)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
@@ -155,83 +143,43 @@ class CosmicScene: SKScene {
         }
     }
 
-    // MARK: - Mouse Handling
+    // MARK: - Public Mouse Handlers (called from AppDelegate global monitors)
 
-    override func mouseMoved(with event: NSEvent) {
-        guard let view = self.view else { return }
-        let locationInView = view.convert(event.locationInWindow, from: nil)
-        let location = convertPoint(fromView: locationInView)
+    func handleMouseAt(_ viewPoint: CGPoint) {
+        let location = convertPoint(fromView: viewPoint)
+        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
 
-        // Find the closest meteor under the cursor
         var closestMeteor: MeteorNode?
-        var closestDist: CGFloat = .greatestFiniteMagnitude
+        var closestDist: CGFloat = hitRadius
 
         for (_, meteor) in meteorNodes {
             let dist = location.distance(to: meteor.position)
-            if dist < max(Cosmic.meteorMaxSize, 22.0) && dist < closestDist {
+            if dist < closestDist {
                 closestDist = dist
                 closestMeteor = meteor
             }
         }
 
         if closestMeteor !== hoveredMeteor {
-            // Unhover previous
             hoveredMeteor?.setHighlighted(false)
             dismissPopover()
-
-            // Hover new
             hoveredMeteor = closestMeteor
             hoveredMeteor?.setHighlighted(true)
-
-            if let meteor = closestMeteor {
-                showPopover(for: meteor)
-            }
+            if let m = closestMeteor { showPopover(for: m) }
         }
 
-        // Update popover position to follow meteor
-        if let popover = popoverNode, let meteor = hoveredMeteor {
-            popover.position = CGPoint(x: meteor.position.x, y: meteor.position.y + 30)
+        if let pop = popoverNode, let m = hoveredMeteor {
+            pop.position = CGPoint(x: m.position.x, y: m.position.y + 30)
         }
     }
 
-    // MARK: - Click to complete
-
-    override func mouseDown(with event: NSEvent) {
-        guard let view = self.view else { return }
-        let locationInView = view.convert(event.locationInWindow, from: nil)
-        let location = convertPoint(fromView: locationInView)
-
-        // Check if we clicked on a meteor — don't complete on single click,
-        // but pass click through to desktop if no meteor hit
-        var hitMeteor: MeteorNode?
+    func handleDoubleClickAt(_ viewPoint: CGPoint) {
+        let location = convertPoint(fromView: viewPoint)
+        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
         for (_, meteor) in meteorNodes {
-            let dist = location.distance(to: meteor.position)
-            if dist < max(Cosmic.meteorMaxSize, 22.0) {
-                hitMeteor = meteor
-                break
-            }
-        }
-
-        if hitMeteor == nil {
-            // Pass click through to desktop
-            self.view?.window?.ignoresMouseEvents = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.view?.window?.ignoresMouseEvents = false
-            }
-        }
-    }
-
-    // Double-click to mark complete
-    override func mouseUp(with event: NSEvent) {
-        guard event.clickCount == 2, let view = self.view else { return }
-        let locationInView = view.convert(event.locationInWindow, from: nil)
-        let location = convertPoint(fromView: locationInView)
-
-        for (_, meteor) in meteorNodes {
-            let dist = location.distance(to: meteor.position)
-            if dist < max(Cosmic.meteorMaxSize, 22.0) {
+            if location.distance(to: meteor.position) < hitRadius {
                 TaskManager.shared.complete(meteor.task.id)
-                break
+                return
             }
         }
     }
