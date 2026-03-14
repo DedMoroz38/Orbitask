@@ -117,7 +117,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         lastClickTime = now
         lastClickPos = screenPt
 
-        guard isDouble else { return }   // only react to double-click
+        guard isDouble else {
+            // Single click — open edit popover
+            for entry in desktopWindows {
+                if entry.window.frame.contains(screenPt) {
+                    let viewPt = CGPoint(
+                        x: screenPt.x - entry.window.frame.origin.x,
+                        y: screenPt.y - entry.window.frame.origin.y
+                    )
+                    entry.scene.handleClickAt(viewPt)
+                    return
+                }
+            }
+            return
+        }
         for entry in desktopWindows {
             if entry.window.frame.contains(screenPt) {
                 let viewPt = CGPoint(

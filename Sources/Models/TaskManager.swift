@@ -48,6 +48,20 @@ class TaskManager: ObservableObject {
         NotificationCenter.default.post(name: .taskCompleted, object: taskID)
     }
 
+    func delete(_ taskID: UUID) {
+        remove(taskID)
+    }
+
+    func cyclePriority(_ taskID: UUID) {
+        guard let index = tasks.firstIndex(where: { $0.id == taskID }) else { return }
+        let all = TaskPriority.allCases
+        let current = tasks[index].priority
+        let nextIndex = (all.firstIndex(of: current)! + 1) % all.count
+        tasks[index].priority = all[nextIndex]
+        save()
+        NotificationCenter.default.post(name: .tasksDidChange, object: nil)
+    }
+
     /// Returns only active (incomplete) tasks, sorted by urgency descending.
     var activeTasks: [CosmicTask] {
         tasks

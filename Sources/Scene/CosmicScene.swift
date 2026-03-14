@@ -8,6 +8,8 @@ class CosmicScene: SKScene {
     private var meteorNodes: [UUID: MeteorNode] = [:]
     private var hoveredMeteor: MeteorNode?
     private var popoverNode: TaskPopoverNode?
+    private var selectedMeteor: MeteorNode?
+    private var editPopoverNode: TaskEditPopoverNode?
     private var lastUpdateTime: TimeInterval = 0
 
     // Orbit ring guides
@@ -118,6 +120,9 @@ class CosmicScene: SKScene {
         if hoveredMeteor?.task.id == taskID {
             dismissPopover()
         }
+        if selectedMeteor?.task.id == taskID {
+            dismissEditPopover()
+        }
 
         meteorNodes[taskID] = nil
 
@@ -137,9 +142,16 @@ class CosmicScene: SKScene {
         }
         lastUpdateTime = currentTime
 
+        starfield.update(dt: dt)
+
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         for (_, meteor) in meteorNodes {
             meteor.updatePosition(center: center, dt: dt)
+        }
+
+        // Keep edit popover attached to its meteor
+        if let ep = editPopoverNode, let m = selectedMeteor {
+            ep.position = CGPoint(x: m.position.x, y: m.position.y + 30)
         }
     }
 
@@ -184,6 +196,47 @@ class CosmicScene: SKScene {
         }
     }
 
+    func handleClickAt(_ viewPoint: CGPoint) {
+        let location = convertPoint(fromView: viewPoint)
+
+        // If edit popover is open, check button hits first
+        if let ep = editPopoverNode {
+            if let action = ep.hitTest(scenePoint: location) {
+                let taskID = ep.task.id
+                switch action {
+                case .complete:
+                    dismissEditPopover()
+                    TaskManager.shared.complete(taskID)
+                case .cyclePriority:
+                    TaskManager.shared.cyclePriority(taskID)
+                    // Refresh popover
+                    if let m = selectedMeteor {
+                        dismissEditPopover()
+                        showEditPopover(for: m)
+                    }
+                case .delete:
+                    dismissEditPopover()
+                    TaskManager.shared.delete(taskID)
+                }
+                return
+            }
+            // Clicked outside the popover — dismiss it
+            if !ep.containsScenePoint(location) {
+                dismissEditPopover()
+            }
+            return
+        }
+
+        // Check if a meteor was clicked — open edit popover
+        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
+        for (_, meteor) in meteorNodes {
+            if location.distance(to: meteor.position) < hitRadius {
+                showEditPopover(for: meteor)
+                return
+            }
+        }
+    }
+
     // MARK: - Popover
 
     private func showPopover(for meteor: MeteorNode) {
@@ -211,5 +264,42 @@ class CosmicScene: SKScene {
         ])
         pop.run(SKAction.sequence([disappear, SKAction.removeFromParent()]))
         popoverNode = nil
+    }
+
+    // MARK: - Edit Popover
+
+    private func showEditPopover(for meteor: MeteorNode) {
+        dismissEditPopover()
+        dismissPopover()
+
+        selectedMeteor?.setSelected(false)
+        selectedMeteor = meteor
+        meteor.setSelected(true)
+
+        let ep = TaskEditPopoverNode(task: meteor.task)
+        ep.position = CGPoint(x: meteor.position.x, y: meteor.position.y + 30)
+        ep.zPosition = 210
+        addChild(ep)
+        editPopoverNode = ep
+
+        ep.alpha = 0
+        ep.setScale(0.8)
+        ep.run(SKAction.group([
+            SKAction.fadeIn(withDuration: 0.15),
+            SKAction.scale(to: 1.0, duration: 0.15)
+        ]))
+    }
+
+    private func dismissEditPopover() {
+        if let ep = editPopoverNode {
+            let disappear = SKAction.group([
+                SKAction.fadeOut(withDuration: 0.1),
+                SKAction.scale(to: 0.8, duration: 0.1)
+            ])
+            ep.run(SKAction.sequence([disappear, SKAction.removeFromParent()]))
+            editPopoverNode = nil
+        }
+        selectedMeteor?.setSelected(false)
+        selectedMeteor = nil
     }
 }

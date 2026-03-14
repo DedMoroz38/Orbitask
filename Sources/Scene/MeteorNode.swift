@@ -16,6 +16,8 @@ class MeteorNode: SKNode {
 
     /// Whether the popover is currently shown
     var isHovered: Bool = false
+    /// Whether this meteor is selected (edit popover open)
+    var isSelected: Bool = false
 
     init(task: CosmicTask) {
         self.task = task
@@ -119,9 +121,22 @@ class MeteorNode: SKNode {
     func setHighlighted(_ highlighted: Bool) {
         isHovered = highlighted
         let targetAlpha: CGFloat = highlighted ? 1.0 : 0.7
-        let targetScale: CGFloat = highlighted ? 1.3 : 1.0
         label.run(SKAction.fadeAlpha(to: targetAlpha, duration: 0.2))
-        meteorBody.run(SKAction.scale(to: targetScale, duration: 0.2))
+        applyScale()
+    }
+
+    /// Select/deselect (edit popover)
+    func setSelected(_ selected: Bool) {
+        isSelected = selected
+        applyScale()
+    }
+
+    private func applyScale() {
+        let target: CGFloat
+        if isSelected { target = 1.5 }
+        else if isHovered { target = 1.3 }
+        else { target = 1.0 }
+        self.run(SKAction.scale(to: target, duration: 0.2))
     }
 
     /// Creates a particle trail emitter programmatically (no .sks file needed).
