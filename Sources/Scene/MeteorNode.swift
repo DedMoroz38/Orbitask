@@ -10,8 +10,13 @@ class MeteorNode: SKNode {
     /// Current orbit radius based on urgency
     var orbitRadius: CGFloat
 
-    private let meteorBody: SKShapeNode
-    private let trailEmitter: SKEmitterNode?
+    /// The visible size of this meteor sprite (diameter).
+    let meteorSize: CGFloat
+
+    private let meteorSprite: SKSpriteNode
+    private let pulseRing: SKShapeNode
+    private let backFlame: SKEmitterNode
+    private let frontFlame: SKEmitterNode
     private let label: SKLabelNode
 
     /// Whether the popover is currently shown
@@ -36,22 +41,24 @@ class MeteorNode: SKNode {
             case .critical: return 1.6
             }
         }()
-        let meteorSize = Cosmic.meteorBaseSize * sizeMultiplier
+        self.meteorSize = Cosmic.meteorBaseSize * sizeMultiplier
 
-        // Main meteor body
-        meteorBody = SKShapeNode(circleOfRadius: meteorSize / 2)
-        meteorBody.fillColor = Cosmic.priorityColor(task.priority)
-        meteorBody.strokeColor = Cosmic.priorityColor(task.priority).withAlphaComponent(0.6)
-        meteorBody.lineWidth = 1.5
-        meteorBody.glowWidth = 3.0
-        meteorBody.zPosition = 20
+        // Meteor sprite from meteor.png
+        let texture = SKTexture(imageNamed: "meteor")
+        meteorSprite = SKSpriteNode(texture: texture,
+                                    size: CGSize(width: meteorSize, height: meteorSize))
+        meteorSprite.color = Cosmic.priorityColor(task.priority)
+        meteorSprite.colorBlendFactor = 0.25
+        meteorSprite.zPosition = 20
 
-        // Meteor inner glow
-        let innerGlow = SKShapeNode(circleOfRadius: meteorSize / 3)
-        innerGlow.fillColor = .white
-        innerGlow.strokeColor = .clear
-        innerGlow.alpha = 0.5
-        innerGlow.zPosition = 21
+        // Soft energy glow — filled disc behind the meteor, like the planet's glow layer
+        // Radius slightly larger than the sprite so the edge peeks out from under it
+        let ringRadius = meteorSize * 0.68
+        pulseRing = SKShapeNode(circleOfRadius: ringRadius)
+        pulseRing.fillColor = NSColor(red: 0.35, green: 0.75, blue: 1.0, alpha: 0.4)
+        pulseRing.strokeColor = .clear
+        pulseRing.glowWidth = 8.0
+        pulseRing.zPosition = 19
 
         // Title label (shown near meteor, truncated)
         label = SKLabelNode(fontNamed: "Helvetica Neue")
@@ -68,28 +75,50 @@ class MeteorNode: SKNode {
         label.position = CGPoint(x: 0, y: meteorSize / 2 + 6)
         label.zPosition = 25
 
-        // Create trail emitter programmatically
-        trailEmitter = MeteorNode.createTrailEmitter(color: Cosmic.priorityColor(task.priority), meteorSize: meteorSize)
+        // Flame trail emitters
+        let priorityColor = Cosmic.priorityColor(task.priority)
+        backFlame = MeteorNode.createFlameEmitter(color: priorityColor, meteorSize: meteorSize, isOverlay: false)
+        frontFlame = MeteorNode.createFlameEmitter(color: priorityColor, meteorSize: meteorSize, isOverlay: true)
 
         super.init()
 
-        addChild(meteorBody)
-        meteorBody.addChild(innerGlow)
+        backFlame.zPosition = 15
+        frontFlame.zPosition = 22
+        addChild(backFlame)
+        addChild(pulseRing)
+        addChild(meteorSprite)
+        addChild(frontFlame)
         addChild(label)
 
-        if let emitter = trailEmitter {
-            emitter.zPosition = 15
-            emitter.targetNode = self.scene ?? self
-            addChild(emitter)
-        }
+        // Ripple pulse — expands outward from scale 1 to 1.6 while fading to 0,
+        // then snaps back to scale 1 at full alpha and repeats.
+        let ripple = SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: 1.0, duration: 1.4),
+                SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.6, duration: 0.15),
+                    SKAction.fadeAlpha(to: 0.0, duration: 1.25)
+                ])
+            ]),
+            SKAction.run { [weak self] in
+                self?.pulseRing.setScale(0.6)
+                self?.pulseRing.alpha = 0.6
+            },
+            SKAction.wait(forDuration: Double.random(in: 0.4...1.0))
+        ])
+        pulseRing.alpha = 0.6
+        pulseRing.run(SKAction.sequence([
+            SKAction.wait(forDuration: Double.random(in: 0...2.5)),
+            SKAction.repeatForever(ripple)
+        ]))
 
-        // Critical tasks pulsate
+        // Critical tasks: sprite gently pulses too
         if task.priority == .critical {
             let pulse = SKAction.sequence([
-                SKAction.scale(to: 1.2, duration: 0.5),
-                SKAction.scale(to: 1.0, duration: 0.5)
+                SKAction.scale(to: 1.15, duration: 0.45),
+                SKAction.scale(to: 1.0,  duration: 0.45)
             ])
-            meteorBody.run(SKAction.repeatForever(pulse))
+            meteorSprite.run(SKAction.repeatForever(pulse))
         }
 
         self.name = "meteor_\(task.id.uuidString)"
@@ -113,8 +142,21 @@ class MeteorNode: SKNode {
         let y = center.y + sin(orbitAngle) * orbitRadius
         self.position = CGPoint(x: x, y: y)
 
-        // Point trail emitter away from direction of travel
-        trailEmitter?.emissionAngle = orbitAngle + .pi
+        // Flame points radially outward from planet
+        backFlame.emissionAngle = orbitAngle
+        frontFlame.emissionAngle = orbitAngle
+
+        // Rotate oval particles so their long axis aligns with the travel direction
+        backFlame.particleRotation = orbitAngle - .pi / 2
+        frontFlame.particleRotation = orbitAngle - .pi / 2
+
+        // Back flame originates from the planet-facing edge of the meteor
+        let backOffset = meteorSize * 0.35
+        backFlame.position = CGPoint(x: cos(orbitAngle) * backOffset, y: sin(orbitAngle) * backOffset)
+
+        // Front overlay originates further back so its wide-angle spread crosses the meteor face
+        let frontOffset = meteorSize * 0.48
+        frontFlame.position = CGPoint(x: cos(orbitAngle) * frontOffset, y: sin(orbitAngle) * frontOffset)
     }
 
     /// Highlight on hover
@@ -139,33 +181,68 @@ class MeteorNode: SKNode {
         self.run(SKAction.scale(to: target, duration: 0.2))
     }
 
-    /// Creates a particle trail emitter programmatically (no .sks file needed).
-    private static func createTrailEmitter(color: NSColor, meteorSize: CGFloat) -> SKEmitterNode {
+    /// Creates a flame trail emitter.
+    /// - isOverlay: if true, a slow wide-angle overlay that drifts across the meteor face.
+    private static func createFlameEmitter(color: NSColor, meteorSize: CGFloat, isOverlay: Bool) -> SKEmitterNode {
         let emitter = SKEmitterNode()
-        emitter.particleBirthRate = 40
         emitter.numParticlesToEmit = 0  // Continuous
-        emitter.particleLifetime = 0.8
-        emitter.particleLifetimeRange = 0.3
 
-        emitter.particleSize = CGSize(width: meteorSize * 0.4, height: meteorSize * 0.4)
-        emitter.particleScaleSpeed = -0.5
+        if isOverlay {
+            // Slow, wide-angle particles that originate behind the meteor and
+            // drift across its face — makes the rock feel embedded in the flame.
+            emitter.particleBirthRate = 22
+            emitter.particleLifetime = 0.65
+            emitter.particleLifetimeRange = 0.2
+            emitter.particleSize = CGSize(width: meteorSize * 0.95, height: meteorSize * 1.1)
+            emitter.particleAlpha = 0.22
+            emitter.particleAlphaSpeed = -0.28
+            emitter.particleSpeed = 22          // enough to cross the meteor diameter
+            emitter.particleSpeedRange = 10
+            emitter.emissionAngleRange = 1.3    // ~75° spread — fans across the sprite
+        } else {
+            // Dense trailing flame behind the meteor
+            emitter.particleBirthRate = 55
+            emitter.particleLifetime = 1.0
+            emitter.particleLifetimeRange = 0.3
+            emitter.particleSize = CGSize(width: meteorSize * 0.9, height: meteorSize * 1.0)
+            emitter.particleAlpha = 0.75
+            emitter.particleAlphaSpeed = -0.65
+            emitter.particleSpeed = 20
+            emitter.particleSpeedRange = 8
+            emitter.emissionAngleRange = 0.55   // tighter core trail
+        }
 
-        emitter.particleColor = color
-        emitter.particleColorBlendFactor = 1.0
-        emitter.particleAlpha = 0.6
-        emitter.particleAlphaSpeed = -0.8
-
+        emitter.particleScaleSpeed = -0.45
         emitter.emissionAngle = 0
-        emitter.emissionAngleRange = 0.3
-        emitter.particleSpeed = 15
-        emitter.particleSpeedRange = 5
 
-        // Use a small white circle texture
-        let texSize = 8
+        // yellow core → priority color → red-orange embers → transparent
+        emitter.particleColorBlendFactor = 1.0
+        emitter.particleColorSequence = SKKeyframeSequence(
+            keyframeValues: [
+                NSColor(red: 1.0, green: 0.92, blue: 0.45, alpha: 1.0),
+                color,
+                NSColor(red: 0.9, green: 0.25, blue: 0.1, alpha: 0.6),
+                NSColor(red: 0.3, green: 0.08, blue: 0.02, alpha: 0.0)
+            ],
+            times: [0, 0.25, 0.65, 1.0]
+        )
+
+        // Soft radial gradient texture for natural flame particles
+        let texSize = 16
         let image = NSImage(size: NSSize(width: texSize, height: texSize), flipped: false) { rect in
             let ctx = NSGraphicsContext.current!.cgContext
-            ctx.setFillColor(NSColor.white.cgColor)
-            ctx.fillEllipse(in: rect)
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let colors = [
+                NSColor.white.cgColor,
+                NSColor.white.withAlphaComponent(0).cgColor
+            ] as CFArray
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0, 1]) {
+                let center = CGPoint(x: rect.midX, y: rect.midY)
+                ctx.drawRadialGradient(gradient,
+                                       startCenter: center, startRadius: 0,
+                                       endCenter: center, endRadius: CGFloat(texSize) / 2,
+                                       options: .drawsAfterEndLocation)
+            }
             return true
         }
         emitter.particleTexture = SKTexture(image: image)
@@ -174,11 +251,10 @@ class MeteorNode: SKNode {
         return emitter
     }
 
-    /// The hit-test area for hover detection.
+    /// Hit-test area matches the visible meteor sprite bounds.
     override func contains(_ point: CGPoint) -> Bool {
         let localPoint = convert(point, from: scene!)
-        let hitRadius = max(Cosmic.meteorMaxSize, 20.0)
-        return localPoint.length() <= hitRadius
+        return localPoint.length() <= meteorSize / 2
     }
 }
 

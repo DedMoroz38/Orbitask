@@ -159,14 +159,12 @@ class CosmicScene: SKScene {
 
     func handleMouseAt(_ viewPoint: CGPoint) {
         let location = convertPoint(fromView: viewPoint)
-        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
-
         var closestMeteor: MeteorNode?
-        var closestDist: CGFloat = hitRadius
+        var closestDist: CGFloat = .greatestFiniteMagnitude
 
         for (_, meteor) in meteorNodes {
             let dist = location.distance(to: meteor.position)
-            if dist < closestDist {
+            if dist < meteor.meteorSize / 2 && dist < closestDist {
                 closestDist = dist
                 closestMeteor = meteor
             }
@@ -187,9 +185,8 @@ class CosmicScene: SKScene {
 
     func handleDoubleClickAt(_ viewPoint: CGPoint) {
         let location = convertPoint(fromView: viewPoint)
-        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
         for (_, meteor) in meteorNodes {
-            if location.distance(to: meteor.position) < hitRadius {
+            if location.distance(to: meteor.position) < meteor.meteorSize / 2 {
                 TaskManager.shared.complete(meteor.task.id)
                 return
             }
@@ -228,9 +225,8 @@ class CosmicScene: SKScene {
         }
 
         // Check if a meteor was clicked — open edit popover
-        let hitRadius = max(Cosmic.meteorMaxSize, 22.0)
         for (_, meteor) in meteorNodes {
-            if location.distance(to: meteor.position) < hitRadius {
+            if location.distance(to: meteor.position) < meteor.meteorSize / 2 {
                 showEditPopover(for: meteor)
                 return
             }

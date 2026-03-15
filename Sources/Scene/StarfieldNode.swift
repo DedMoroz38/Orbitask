@@ -108,7 +108,7 @@ class StarfieldNode: SKNode {
     // MARK: - Shooting Star
 
     private func scheduleShootingStar() {
-        let delay = Double.random(in: 5...18)
+        let delay = Double.random(in: 1.5...4)
         run(SKAction.sequence([
             SKAction.wait(forDuration: delay),
             SKAction.run { [weak self] in self?.spawnShootingStar() }

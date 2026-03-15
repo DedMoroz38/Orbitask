@@ -14,6 +14,9 @@ echo "🌌 Building CosmicTasks..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
+# Copy image assets
+cp meteor.png "$RESOURCES_DIR/"
+
 # Compile all Swift sources into one binary
 swiftc \
     -o "$MACOS_DIR/$APP_NAME" \

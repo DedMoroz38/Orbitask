@@ -8,8 +8,8 @@ enum Cosmic {
     static let planetGlowRadius: CGFloat = 90.0
 
     // Meteors
-    static let meteorBaseSize: CGFloat = 14.0
-    static let meteorMaxSize: CGFloat = 28.0
+    static let meteorBaseSize: CGFloat = 100.0
+    static let meteorMaxSize: CGFloat = 120.0
 
     // Orbit radii — meteors range from outerOrbit (urgency 0) to innerOrbit (urgency 1)
     static let innerOrbit: CGFloat = 100.0
