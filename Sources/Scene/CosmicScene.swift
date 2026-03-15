@@ -114,7 +114,6 @@ class CosmicScene: SKScene {
               let meteor = meteorNodes[taskID] else { return }
 
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let color = Cosmic.priorityColor(meteor.task.priority)
 
         // Dismiss popover if shown for this meteor
         if hoveredMeteor?.task.id == taskID {
@@ -126,9 +125,7 @@ class CosmicScene: SKScene {
 
         meteorNodes[taskID] = nil
 
-        ExplosionEffect.absorb(node: meteor, toward: center, color: color, in: self) {
-            // Meteor already removed by the action
-        }
+        meteor.animateCompletion(toward: center, in: self) {}
     }
 
     // MARK: - Update Loop
