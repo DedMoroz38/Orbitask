@@ -1,222 +1,409 @@
 import SpriteKit
 
+// MARK: - Shared helpers
+
+/// Loads calendar.png from the app bundle and returns an SKSpriteNode sized to `size` points.
+private func makeCalendarIconNode(size: CGFloat) -> SKSpriteNode? {
+    guard let url = Bundle.main.url(forResource: "calendar", withExtension: "png"),
+          let image = NSImage(contentsOf: url) else { return nil }
+    let texture = SKTexture(image: image)
+    return SKSpriteNode(texture: texture, size: CGSize(width: size, height: size))
+}
+
 /// A SpriteKit-based popover that shows task details when hovering over a meteor.
 class TaskPopoverNode: SKNode {
-    private static let popoverWidth: CGFloat = 240
-    private static let lineHeight: CGFloat = 16
-    private static let padding: CGFloat = 12
+    private static let popoverWidth: CGFloat = 260
+    private static let cornerRadius: CGFloat = 18
+    private static let padding: CGFloat = 16
 
-    init(task: CosmicTask) {
+    /// Returns the height this popover will occupy for a given task.
+    static func preferredHeight(for task: CosmicTask) -> CGFloat {
+        let hasDesc = !task.description.isEmpty
+        let descHeight: CGFloat = hasDesc ? 16 : 0
+        let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let sepSpacing: CGFloat = 10
+        return padding
+            + 20                               // titleHeight
+            + descSpacing + descHeight
+            + sepSpacing + 0.5 + sepSpacing    // separator
+            + 16                               // infoRowHeight
+            + sepSpacing + 14                  // hintHeight
+            + padding
+    }
+
+    init(task: CosmicTask, backgroundTexture: SKTexture? = nil) {
         super.init()
 
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-
-        let relFormatter = RelativeDateTimeFormatter()
-        relFormatter.unitsStyle = .abbreviated
-
+        formatter.dateFormat = "d MMM"
         let dueString = formatter.string(from: task.dueDate)
-        let relativeString = relFormatter.localizedString(for: task.dueDate, relativeTo: Date())
 
-        // Build text lines
-        var lines: [(String, NSColor, CGFloat)] = []
-        lines.append((task.title, .white, 13))
-        if !task.description.isEmpty {
-            lines.append((task.description, NSColor.white.withAlphaComponent(0.7), 10))
-        }
-        lines.append(("Priority: \(task.priority.label)", Cosmic.priorityColor(task.priority), 10))
-        lines.append(("Due: \(dueString) (\(relativeString))", urgencyColor(task), 10))
+        // Layout measurements
+        let titleHeight: CGFloat = 20
+        let hasDesc = !task.description.isEmpty
+        let descHeight: CGFloat = hasDesc ? 16 : 0
+        let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let sepSpacing: CGFloat = 10
+        let infoRowHeight: CGFloat = 16
+        let hintHeight: CGFloat = 14
 
-        // Calculate height
-        let totalHeight = Self.padding * 2 + CGFloat(lines.count) * Self.lineHeight + 4
+        let totalHeight = Self.padding
+            + titleHeight
+            + descSpacing + descHeight
+            + sepSpacing + 0.5 + sepSpacing
+            + infoRowHeight
+            + sepSpacing + hintHeight
+            + Self.padding
 
-        // Background card
-        let bg = SKShapeNode(rect: CGRect(
+        let bgRect = CGRect(
             x: -Self.popoverWidth / 2,
             y: 0,
             width: Self.popoverWidth,
             height: totalHeight
-        ), cornerRadius: 8)
-        bg.fillColor = NSColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 0.92)
-        bg.strokeColor = Cosmic.priorityColor(task.priority).withAlphaComponent(0.5)
-        bg.lineWidth = 1.0
-        bg.zPosition = 0
-        addChild(bg)
+        )
 
-        // Priority accent bar
-        let accent = SKShapeNode(rect: CGRect(
-            x: -Self.popoverWidth / 2,
-            y: totalHeight - 3,
-            width: Self.popoverWidth,
-            height: 3
-        ), cornerRadius: 1.5)
-        accent.fillColor = Cosmic.priorityColor(task.priority)
-        accent.strokeColor = .clear
-        accent.zPosition = 1
-        addChild(accent)
+        // Background: blurred scene capture (frosted glass) or opaque dark fallback
+        if let bgTex = backgroundTexture {
+            let blurEffect = SKEffectNode()
+            blurEffect.shouldRasterize = true
+            blurEffect.shouldEnableEffects = true
+            blurEffect.filter = CIFilter(name: "CIGaussianBlur",
+                                         parameters: ["inputRadius": 20])
+            blurEffect.zPosition = 0
+            let bgSprite = SKSpriteNode(texture: bgTex,
+                                        size: CGSize(width: Self.popoverWidth, height: totalHeight))
+            bgSprite.position = CGPoint(x: 0, y: totalHeight / 2)
+            blurEffect.addChild(bgSprite)
+            addChild(blurEffect)
 
-        // Render text lines
-        var y = totalHeight - Self.padding - Self.lineHeight
-        for (text, color, fontSize) in lines {
-            let label = SKLabelNode(fontNamed: "Helvetica Neue")
-            label.text = text
-            label.fontSize = fontSize
-            label.fontColor = color
-            label.horizontalAlignmentMode = .left
-            label.verticalAlignmentMode = .top
-            label.position = CGPoint(x: -Self.popoverWidth / 2 + Self.padding, y: y)
-            label.zPosition = 2
-
-            // Truncate if too long
-            let maxWidth = Self.popoverWidth - Self.padding * 2
-            if label.frame.width > maxWidth {
-                label.preferredMaxLayoutWidth = maxWidth
-                label.numberOfLines = 1
-            }
-
-            addChild(label)
-            y -= Self.lineHeight
+            // Dark tint overlay so text stays readable
+            let tint = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+            tint.fillColor = NSColor(white: 0.0, alpha: 0.50)
+            tint.strokeColor = .clear
+            tint.zPosition = 1
+            addChild(tint)
+        } else {
+            let glassBg = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+            glassBg.fillColor = NSColor(white: 0.12, alpha: 0.85)
+            glassBg.strokeColor = .clear
+            glassBg.zPosition = 0
+            addChild(glassBg)
         }
 
-        // Small hint
+        // Border overlay
+        let border = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+        border.fillColor = .clear
+        border.strokeColor = NSColor(white: 1.0, alpha: 0.18)
+        border.lineWidth = 0.5
+        border.zPosition = 2
+        addChild(border)
+
+        // Inner light sheen
+        let sheen = SKShapeNode(rect: bgRect.insetBy(dx: 1, dy: 1), cornerRadius: Self.cornerRadius - 1)
+        sheen.fillColor = NSColor(white: 1.0, alpha: 0.04)
+        sheen.strokeColor = .clear
+        sheen.zPosition = 2
+        addChild(sheen)
+
+        let leftX = -Self.popoverWidth / 2 + Self.padding
+        let maxTextWidth = Self.popoverWidth - Self.padding * 2
+        var y = totalHeight - Self.padding
+
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "Helvetica Neue Bold")
+        titleLabel.text = task.title
+        titleLabel.fontSize = 14
+        titleLabel.fontColor = .white
+        titleLabel.horizontalAlignmentMode = .left
+        titleLabel.verticalAlignmentMode = .top
+        titleLabel.position = CGPoint(x: leftX, y: y)
+        titleLabel.zPosition = 5
+        if titleLabel.frame.width > maxTextWidth {
+            titleLabel.preferredMaxLayoutWidth = maxTextWidth
+            titleLabel.numberOfLines = 1
+        }
+        addChild(titleLabel)
+        y -= titleHeight
+
+        // Description
+        if hasDesc {
+            y -= descSpacing
+            let descLabel = SKLabelNode(fontNamed: "Helvetica Neue")
+            descLabel.text = task.description
+            descLabel.fontSize = 11
+            descLabel.fontColor = NSColor(white: 1.0, alpha: 0.55)
+            descLabel.horizontalAlignmentMode = .left
+            descLabel.verticalAlignmentMode = .top
+            descLabel.position = CGPoint(x: leftX, y: y)
+            descLabel.zPosition = 5
+            if descLabel.frame.width > maxTextWidth {
+                descLabel.preferredMaxLayoutWidth = maxTextWidth
+                descLabel.numberOfLines = 1
+            }
+            addChild(descLabel)
+            y -= descHeight
+        }
+
+        // Separator
+        y -= sepSpacing
+        let sep = SKShapeNode(rect: CGRect(x: leftX, y: y, width: Self.popoverWidth - Self.padding * 2, height: 0.5))
+        sep.fillColor = NSColor(white: 1.0, alpha: 0.1)
+        sep.strokeColor = .clear
+        sep.zPosition = 5
+        addChild(sep)
+        y -= 0.5 + sepSpacing
+
+        // Info row: date left, priority right
+        let calIconSize: CGFloat = 11
+        let calIconSpacing: CGFloat = 4
+        if let calIcon = makeCalendarIconNode(size: calIconSize) {
+            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: y - calIconSize / 2)
+            calIcon.zPosition = 5
+            addChild(calIcon)
+        }
+        let dateLabel = SKLabelNode(fontNamed: "Helvetica Neue")
+        dateLabel.text = dueString
+        dateLabel.fontSize = 11
+        dateLabel.fontColor = NSColor(white: 1.0, alpha: 0.65)
+        dateLabel.horizontalAlignmentMode = .left
+        dateLabel.verticalAlignmentMode = .top
+        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: y)
+        dateLabel.zPosition = 5
+        addChild(dateLabel)
+
+        let priorityLabel = SKLabelNode(fontNamed: "Helvetica Neue Medium")
+        priorityLabel.text = "●  \(task.priority.label)"
+        priorityLabel.fontSize = 11
+        priorityLabel.fontColor = Cosmic.priorityColor(task.priority)
+        priorityLabel.horizontalAlignmentMode = .right
+        priorityLabel.verticalAlignmentMode = .top
+        priorityLabel.position = CGPoint(x: Self.popoverWidth / 2 - Self.padding, y: y)
+        priorityLabel.zPosition = 5
+        addChild(priorityLabel)
+        y -= infoRowHeight
+
+        // Hint
+        y -= sepSpacing
         let hint = SKLabelNode(fontNamed: "Helvetica Neue")
-        hint.text = "Double-click to complete"
-        hint.fontSize = 8
-        hint.fontColor = NSColor.white.withAlphaComponent(0.35)
+        hint.text = "Click for actions"
+        hint.fontSize = 9
+        hint.fontColor = NSColor.white.withAlphaComponent(0.3)
         hint.horizontalAlignmentMode = .center
         hint.verticalAlignmentMode = .top
-        hint.position = CGPoint(x: 0, y: -4)
-        hint.zPosition = 2
+        hint.position = CGPoint(x: 0, y: y)
+        hint.zPosition = 5
         addChild(hint)
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    private func urgencyColor(_ task: CosmicTask) -> NSColor {
-        let u = task.urgency()
-        if u > 0.8 { return NSColor(red: 0.96, green: 0.26, blue: 0.21, alpha: 1.0) }
-        if u > 0.5 { return NSColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1.0) }
-        return NSColor.white.withAlphaComponent(0.7)
-    }
 }
 
 // MARK: - Edit Popover (click-to-edit)
 
 /// A popover that appears when clicking a meteor, with action buttons.
+/// Card-style design with frosted glass background.
 class TaskEditPopoverNode: SKNode {
-    enum Action { case complete, cyclePriority, delete }
+    enum Action { case complete, delete }
 
-    private static let popoverWidth: CGFloat = 240
-    private static let lineHeight: CGFloat = 16
-    private static let padding: CGFloat = 12
-    private static let buttonHeight: CGFloat = 26
-    private static let buttonSpacing: CGFloat = 6
+    private static let popoverWidth: CGFloat = 260
+    private static let cornerRadius: CGFloat = 18
+    private static let padding: CGFloat = 16
+    private static let buttonHeight: CGFloat = 30
+    private static let buttonSpacing: CGFloat = 8
+
+    /// Returns the height this popover will occupy for a given task.
+    static func preferredHeight(for task: CosmicTask) -> CGFloat {
+        let hasDesc = !task.description.isEmpty
+        let descHeight: CGFloat = hasDesc ? 16 : 0
+        let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let sepSpacing: CGFloat = 10
+        let buttonsArea: CGFloat = buttonHeight
+        return padding
+            + 20                               // titleHeight
+            + descSpacing + descHeight
+            + sepSpacing
+            + 18                               // infoRowHeight
+            + sepSpacing + 0.5 + sepSpacing    // separator
+            + buttonsArea
+            + padding
+    }
 
     let task: CosmicTask
 
-    /// Rectangles for hit testing (in scene coordinates once positioned)
+    /// Rectangles for hit testing (in local coordinates)
     private var completeButtonRect: CGRect = .zero
-    private var priorityButtonRect: CGRect = .zero
     private var deleteButtonRect: CGRect = .zero
+    private var totalHeight: CGFloat = 0
 
-    init(task: CosmicTask) {
+    init(task: CosmicTask, backgroundTexture: SKTexture? = nil) {
         self.task = task
         super.init()
 
         let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-
-        let relFormatter = RelativeDateTimeFormatter()
-        relFormatter.unitsStyle = .abbreviated
-
+        formatter.dateFormat = "d MMM"
         let dueString = formatter.string(from: task.dueDate)
-        let relativeString = relFormatter.localizedString(for: task.dueDate, relativeTo: Date())
 
-        var lines: [(String, NSColor, CGFloat)] = []
-        lines.append((task.title, .white, 13))
-        if !task.description.isEmpty {
-            lines.append((task.description, NSColor.white.withAlphaComponent(0.7), 10))
-        }
-        lines.append(("Priority: \(task.priority.label)", Cosmic.priorityColor(task.priority), 10))
-        lines.append(("Due: \(dueString) (\(relativeString))", urgencyColor(task), 10))
+        // Layout measurements
+        let titleHeight: CGFloat = 20
+        let hasDesc = !task.description.isEmpty
+        let descHeight: CGFloat = hasDesc ? 16 : 0
+        let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let sepSpacing: CGFloat = 10
+        let infoRowHeight: CGFloat = 18
+        let buttonsArea: CGFloat = Self.buttonHeight
 
-        let infoHeight = Self.padding + CGFloat(lines.count) * Self.lineHeight + 4
-        let buttonsHeight = Self.padding + 3 * Self.buttonHeight + 2 * Self.buttonSpacing + Self.padding
-        let totalHeight = infoHeight + buttonsHeight
+        totalHeight = Self.padding
+            + titleHeight
+            + descSpacing + descHeight
+            + sepSpacing
+            + infoRowHeight
+            + sepSpacing + 0.5 + sepSpacing    // separator
+            + buttonsArea
+            + Self.padding
 
-        // Background card
-        let bg = SKShapeNode(rect: CGRect(
+        let bgRect = CGRect(
             x: -Self.popoverWidth / 2,
             y: 0,
             width: Self.popoverWidth,
             height: totalHeight
-        ), cornerRadius: 8)
-        bg.fillColor = NSColor(red: 0.08, green: 0.08, blue: 0.15, alpha: 0.95)
-        bg.strokeColor = Cosmic.priorityColor(task.priority).withAlphaComponent(0.5)
-        bg.lineWidth = 1.0
-        bg.zPosition = 0
-        addChild(bg)
+        )
 
-        // Accent bar
-        let accent = SKShapeNode(rect: CGRect(
-            x: -Self.popoverWidth / 2,
-            y: totalHeight - 3,
-            width: Self.popoverWidth,
-            height: 3
-        ), cornerRadius: 1.5)
-        accent.fillColor = Cosmic.priorityColor(task.priority)
-        accent.strokeColor = .clear
-        accent.zPosition = 1
-        addChild(accent)
+        // ── Background: blurred scene capture (frosted glass) or opaque dark fallback ──
+        if let bgTex = backgroundTexture {
+            let blurEffect = SKEffectNode()
+            blurEffect.shouldRasterize = true
+            blurEffect.shouldEnableEffects = true
+            blurEffect.filter = CIFilter(name: "CIGaussianBlur",
+                                         parameters: ["inputRadius": 20])
+            blurEffect.zPosition = 0
+            let bgSprite = SKSpriteNode(texture: bgTex,
+                                        size: CGSize(width: Self.popoverWidth, height: totalHeight))
+            bgSprite.position = CGPoint(x: 0, y: totalHeight / 2)
+            blurEffect.addChild(bgSprite)
+            addChild(blurEffect)
 
-        // Info lines
-        var y = totalHeight - Self.padding - Self.lineHeight
-        for (text, color, fontSize) in lines {
-            let label = SKLabelNode(fontNamed: "Helvetica Neue")
-            label.text = text
-            label.fontSize = fontSize
-            label.fontColor = color
-            label.horizontalAlignmentMode = .left
-            label.verticalAlignmentMode = .top
-            label.position = CGPoint(x: -Self.popoverWidth / 2 + Self.padding, y: y)
-            label.zPosition = 2
-            let maxWidth = Self.popoverWidth - Self.padding * 2
-            if label.frame.width > maxWidth {
-                label.preferredMaxLayoutWidth = maxWidth
-                label.numberOfLines = 1
-            }
-            addChild(label)
-            y -= Self.lineHeight
+            // Dark tint overlay so text and buttons stay readable
+            let tint = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+            tint.fillColor = NSColor(white: 0.0, alpha: 0.50)
+            tint.strokeColor = .clear
+            tint.zPosition = 1
+            addChild(tint)
+        } else {
+            let glassBg = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+            glassBg.fillColor = NSColor(white: 0.12, alpha: 0.85)
+            glassBg.strokeColor = .clear
+            glassBg.zPosition = 0
+            addChild(glassBg)
         }
 
-        // Buttons area
-        y -= Self.padding
+        // Subtle outer border
+        let border = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
+        border.fillColor = .clear
+        border.strokeColor = NSColor(white: 1.0, alpha: 0.18)
+        border.lineWidth = 0.5
+        border.zPosition = 2
+        addChild(border)
 
-        let buttonWidth = Self.popoverWidth - Self.padding * 2
-        let buttonX = -Self.popoverWidth / 2 + Self.padding
+        // Inner light sheen for glass depth
+        let sheen = SKShapeNode(rect: bgRect.insetBy(dx: 1, dy: 1), cornerRadius: Self.cornerRadius - 1)
+        sheen.fillColor = NSColor(white: 1.0, alpha: 0.04)
+        sheen.strokeColor = .clear
+        sheen.zPosition = 2
+        addChild(sheen)
+
+        // ── Content ──
+        let leftX = -Self.popoverWidth / 2 + Self.padding
+        let rightX = Self.popoverWidth / 2 - Self.padding
+        let maxTextWidth = Self.popoverWidth - Self.padding * 2
+        var y = totalHeight - Self.padding
+
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "Helvetica Neue Bold")
+        titleLabel.text = task.title
+        titleLabel.fontSize = 14
+        titleLabel.fontColor = .white
+        titleLabel.horizontalAlignmentMode = .left
+        titleLabel.verticalAlignmentMode = .top
+        titleLabel.position = CGPoint(x: leftX, y: y)
+        titleLabel.zPosition = 5
+        if titleLabel.frame.width > maxTextWidth {
+            titleLabel.preferredMaxLayoutWidth = maxTextWidth
+            titleLabel.numberOfLines = 1
+        }
+        addChild(titleLabel)
+        y -= titleHeight
+
+        // Description
+        if hasDesc {
+            y -= descSpacing
+            let descLabel = SKLabelNode(fontNamed: "Helvetica Neue")
+            descLabel.text = task.description
+            descLabel.fontSize = 11
+            descLabel.fontColor = NSColor(white: 1.0, alpha: 0.55)
+            descLabel.horizontalAlignmentMode = .left
+            descLabel.verticalAlignmentMode = .top
+            descLabel.position = CGPoint(x: leftX, y: y)
+            descLabel.zPosition = 5
+            if descLabel.frame.width > maxTextWidth {
+                descLabel.preferredMaxLayoutWidth = maxTextWidth
+                descLabel.numberOfLines = 1
+            }
+            addChild(descLabel)
+            y -= descHeight
+        }
+
+        // ── Info row: date + priority ──
+        y -= sepSpacing
+        let calIconSize: CGFloat = 11
+        let calIconSpacing: CGFloat = 4
+        if let calIcon = makeCalendarIconNode(size: calIconSize) {
+            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: y - calIconSize / 2)
+            calIcon.zPosition = 5
+            addChild(calIcon)
+        }
+        let dateLabel = SKLabelNode(fontNamed: "Helvetica Neue")
+        dateLabel.text = dueString
+        dateLabel.fontSize = 11
+        dateLabel.fontColor = NSColor(white: 1.0, alpha: 0.65)
+        dateLabel.horizontalAlignmentMode = .left
+        dateLabel.verticalAlignmentMode = .top
+        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: y)
+        dateLabel.zPosition = 5
+        addChild(dateLabel)
+
+        let priorityLabel = SKLabelNode(fontNamed: "Helvetica Neue Medium")
+        priorityLabel.text = "●  \(task.priority.label)"
+        priorityLabel.fontSize = 11
+        priorityLabel.fontColor = Cosmic.priorityColor(task.priority)
+        priorityLabel.horizontalAlignmentMode = .right
+        priorityLabel.verticalAlignmentMode = .top
+        priorityLabel.position = CGPoint(x: rightX, y: y)
+        priorityLabel.zPosition = 5
+        addChild(priorityLabel)
+        y -= infoRowHeight
+
+        // ── Separator 2 ──
+        y -= sepSpacing
+        addSeparator(at: y, leftX: leftX, width: maxTextWidth)
+        y -= 0.5 + sepSpacing
+
+        // ── Action buttons ──
+        let totalButtonWidth = Self.popoverWidth - Self.padding * 2
+        let halfButtonWidth = (totalButtonWidth - Self.buttonSpacing) / 2
+        let white = NSColor.white
 
         completeButtonRect = makeButton(
-            title: "✓  Complete", x: buttonX, y: y - Self.buttonHeight,
-            width: buttonWidth, height: Self.buttonHeight,
-            color: NSColor(red: 0.18, green: 0.72, blue: 0.35, alpha: 1.0)
+            title: "✓  Complete", x: leftX, y: y - Self.buttonHeight,
+            width: halfButtonWidth, height: Self.buttonHeight,
+            color: white
         )
-        y -= Self.buttonHeight + Self.buttonSpacing
-
-        priorityButtonRect = makeButton(
-            title: "↻  Cycle Priority", x: buttonX, y: y - Self.buttonHeight,
-            width: buttonWidth, height: Self.buttonHeight,
-            color: NSColor(red: 0.35, green: 0.55, blue: 0.95, alpha: 1.0)
-        )
-        y -= Self.buttonHeight + Self.buttonSpacing
 
         deleteButtonRect = makeButton(
-            title: "✕  Delete", x: buttonX, y: y - Self.buttonHeight,
-            width: buttonWidth, height: Self.buttonHeight,
-            color: NSColor(red: 0.85, green: 0.22, blue: 0.22, alpha: 1.0)
+            title: "✕  Delete", x: leftX + halfButtonWidth + Self.buttonSpacing, y: y - Self.buttonHeight,
+            width: halfButtonWidth, height: Self.buttonHeight,
+            color: white
         )
     }
 
@@ -224,13 +411,23 @@ class TaskEditPopoverNode: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Helpers
+
+    private func addSeparator(at y: CGFloat, leftX: CGFloat, width: CGFloat) {
+        let sep = SKShapeNode(rect: CGRect(x: leftX, y: y, width: width, height: 0.5))
+        sep.fillColor = NSColor(white: 1.0, alpha: 0.1)
+        sep.strokeColor = .clear
+        sep.zPosition = 5
+        addChild(sep)
+    }
+
     @discardableResult
     private func makeButton(title: String, x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, color: NSColor) -> CGRect {
         let rect = CGRect(x: x, y: y, width: width, height: height)
-        let bg = SKShapeNode(rect: rect, cornerRadius: 6)
-        bg.fillColor = color.withAlphaComponent(0.25)
-        bg.strokeColor = color.withAlphaComponent(0.6)
-        bg.lineWidth = 1.0
+        let bg = SKShapeNode(rect: rect, cornerRadius: 10)
+        bg.fillColor = color.withAlphaComponent(0.15)
+        bg.strokeColor = color.withAlphaComponent(0.35)
+        bg.lineWidth = 0.5
         bg.zPosition = 3
         addChild(bg)
 
@@ -251,7 +448,6 @@ class TaskEditPopoverNode: SKNode {
     func hitTest(scenePoint: CGPoint) -> Action? {
         let local = convert(scenePoint, from: scene!)
         if completeButtonRect.contains(local) { return .complete }
-        if priorityButtonRect.contains(local) { return .cyclePriority }
         if deleteButtonRect.contains(local) { return .delete }
         return nil
     }
@@ -259,21 +455,12 @@ class TaskEditPopoverNode: SKNode {
     /// Whether the scene-coordinate point is inside the whole popover background.
     func containsScenePoint(_ scenePoint: CGPoint) -> Bool {
         let local = convert(scenePoint, from: scene!)
-        // Use a generous rect around the popover
-        let bounds = calculateAccumulatedFrame()
         let localBounds = CGRect(
             x: -Self.popoverWidth / 2 - 8,
             y: -8,
             width: Self.popoverWidth + 16,
-            height: bounds.height + 16
+            height: totalHeight + 16
         )
         return localBounds.contains(local)
-    }
-
-    private func urgencyColor(_ task: CosmicTask) -> NSColor {
-        let u = task.urgency()
-        if u > 0.8 { return NSColor(red: 0.96, green: 0.26, blue: 0.21, alpha: 1.0) }
-        if u > 0.5 { return NSColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1.0) }
-        return NSColor.white.withAlphaComponent(0.7)
     }
 }

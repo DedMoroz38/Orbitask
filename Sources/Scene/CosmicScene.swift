@@ -146,9 +146,12 @@ class CosmicScene: SKScene {
             meteor.updatePosition(center: center, dt: dt)
         }
 
-        // Keep edit popover attached to its meteor
+        // Keep edit popover attached to its meteor using smart anchor
         if let ep = editPopoverNode, let m = selectedMeteor {
-            ep.position = CGPoint(x: m.position.x, y: m.position.y + 30)
+            let h = TaskEditPopoverNode.preferredHeight(for: m.task)
+            ep.position = computePopoverAnchor(meteorPos: m.position,
+                                               meteorRadius: m.meteorSize / 2,
+                                               popoverWidth: 260, popoverHeight: h)
         }
     }
 
@@ -176,7 +179,10 @@ class CosmicScene: SKScene {
         }
 
         if let pop = popoverNode, let m = hoveredMeteor {
-            pop.position = CGPoint(x: m.position.x, y: m.position.y + 30)
+            let h = TaskPopoverNode.preferredHeight(for: m.task)
+            pop.position = computePopoverAnchor(meteorPos: m.position,
+                                                meteorRadius: m.meteorSize / 2,
+                                                popoverWidth: 260, popoverHeight: h)
         }
     }
 
@@ -201,13 +207,6 @@ class CosmicScene: SKScene {
                 case .complete:
                     dismissEditPopover()
                     TaskManager.shared.complete(taskID)
-                case .cyclePriority:
-                    TaskManager.shared.cyclePriority(taskID)
-                    // Refresh popover
-                    if let m = selectedMeteor {
-                        dismissEditPopover()
-                        showEditPopover(for: m)
-                    }
                 case .delete:
                     dismissEditPopover()
                     TaskManager.shared.delete(taskID)
@@ -230,12 +229,58 @@ class CosmicScene: SKScene {
         }
     }
 
+    // MARK: - Popover Positioning
+
+    /// Computes the best anchor (bottom-center of the popover card) so the popover
+    /// does not overlap the meteor and stays inside the scene bounds.
+    /// Preference order: above → right → left → below → clamped fallback.
+    private func computePopoverAnchor(meteorPos: CGPoint,
+                                      meteorRadius: CGFloat,
+                                      popoverWidth w: CGFloat,
+                                      popoverHeight h: CGFloat) -> CGPoint {
+        let gap: CGFloat = 14
+        let margin: CGFloat = 8
+
+        let candidates: [CGPoint] = [
+            // Above
+            CGPoint(x: meteorPos.x, y: meteorPos.y + meteorRadius + gap),
+            // Right (centered vertically)
+            CGPoint(x: meteorPos.x + meteorRadius + gap + w / 2, y: meteorPos.y - h / 2),
+            // Left (centered vertically)
+            CGPoint(x: meteorPos.x - meteorRadius - gap - w / 2, y: meteorPos.y - h / 2),
+            // Below
+            CGPoint(x: meteorPos.x, y: meteorPos.y - meteorRadius - gap - h),
+        ]
+
+        for anchor in candidates {
+            let rect = CGRect(x: anchor.x - w / 2, y: anchor.y, width: w, height: h)
+            if rect.minX >= margin && rect.maxX <= size.width - margin &&
+               rect.minY >= margin && rect.maxY <= size.height - margin {
+                return anchor
+            }
+        }
+
+        // Clamped fallback: above, pushed inside bounds
+        var fallback = CGPoint(x: meteorPos.x, y: meteorPos.y + meteorRadius + gap)
+        fallback.x = max(w / 2 + margin, min(size.width  - w / 2 - margin, fallback.x))
+        fallback.y = max(margin,          min(size.height - h   - margin,   fallback.y))
+        return fallback
+    }
+
     // MARK: - Popover
 
     private func showPopover(for meteor: MeteorNode) {
         dismissPopover()
-        let pop = TaskPopoverNode(task: meteor.task)
-        pop.position = CGPoint(x: meteor.position.x, y: meteor.position.y + 30)
+        let w = CGFloat(260)
+        let h = TaskPopoverNode.preferredHeight(for: meteor.task)
+        let anchor = computePopoverAnchor(meteorPos: meteor.position,
+                                          meteorRadius: meteor.meteorSize / 2,
+                                          popoverWidth: w, popoverHeight: h)
+        let cropRect = CGRect(x: anchor.x - w / 2, y: anchor.y, width: w, height: h)
+        let bgTex = view?.texture(from: self, crop: cropRect)
+
+        let pop = TaskPopoverNode(task: meteor.task, backgroundTexture: bgTex)
+        pop.position = anchor
         pop.zPosition = 200
         addChild(pop)
         popoverNode = pop
@@ -269,8 +314,16 @@ class CosmicScene: SKScene {
         selectedMeteor = meteor
         meteor.setSelected(true)
 
-        let ep = TaskEditPopoverNode(task: meteor.task)
-        ep.position = CGPoint(x: meteor.position.x, y: meteor.position.y + 30)
+        let w = CGFloat(260)
+        let h = TaskEditPopoverNode.preferredHeight(for: meteor.task)
+        let anchor = computePopoverAnchor(meteorPos: meteor.position,
+                                          meteorRadius: meteor.meteorSize / 2,
+                                          popoverWidth: w, popoverHeight: h)
+        let cropRect = CGRect(x: anchor.x - w / 2, y: anchor.y, width: w, height: h)
+        let bgTex = view?.texture(from: self, crop: cropRect)
+
+        let ep = TaskEditPopoverNode(task: meteor.task, backgroundTexture: bgTex)
+        ep.position = anchor
         ep.zPosition = 210
         addChild(ep)
         editPopoverNode = ep

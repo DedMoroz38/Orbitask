@@ -35,6 +35,7 @@ struct CosmicTask: Codable, Identifiable, Equatable {
     var description: String
     var priority: TaskPriority
     var dueDate: Date
+    var link: String
     var isCompleted: Bool
     var createdAt: Date
 
@@ -44,6 +45,7 @@ struct CosmicTask: Codable, Identifiable, Equatable {
         description: String = "",
         priority: TaskPriority = .medium,
         dueDate: Date,
+        link: String = "",
         isCompleted: Bool = false,
         createdAt: Date = Date()
     ) {
@@ -52,6 +54,7 @@ struct CosmicTask: Codable, Identifiable, Equatable {
         self.description = description
         self.priority = priority
         self.dueDate = dueDate
+        self.link = link
         self.isCompleted = isCompleted
         self.createdAt = createdAt
     }
