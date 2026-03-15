@@ -20,8 +20,9 @@ cp planet.png "$RESOURCES_DIR/"
 cp Resources/calendar.png "$RESOURCES_DIR/"
 
 # Compile all Swift sources into one binary
+# Build for arm64
 swiftc \
-    -o "$MACOS_DIR/$APP_NAME" \
+    -o "$MACOS_DIR/${APP_NAME}_arm64" \
     -target arm64-apple-macosx14.0 \
     -O \
     Sources/Models/CosmicTask.swift \
@@ -40,7 +41,43 @@ swiftc \
     -framework SpriteKit \
     -framework SwiftUI
 
-echo "✅ Compiled binary"
+echo "✅ Compiled arm64 binary"
+
+# Build for x86_64
+swiftc \
+    -o "$MACOS_DIR/${APP_NAME}_x86_64" \
+    -target x86_64-apple-macosx14.0 \
+    -O \
+    Sources/Models/CosmicTask.swift \
+    Sources/Helpers/Constants.swift \
+    Sources/Models/TaskManager.swift \
+    Sources/Scene/StarfieldNode.swift \
+    Sources/Scene/PlanetNode.swift \
+    Sources/Scene/MeteorNode.swift \
+    Sources/Scene/ExplosionEffect.swift \
+    Sources/Scene/TaskPopoverNode.swift \
+    Sources/Scene/CosmicScene.swift \
+    Sources/App/StatusBarController.swift \
+    Sources/App/AppDelegate.swift \
+    Sources/App/main.swift \
+    -framework Cocoa \
+    -framework SpriteKit \
+    -framework SwiftUI
+
+echo "✅ Compiled x86_64 binary"
+
+# Create universal binary
+lipo -create \
+    "$MACOS_DIR/${APP_NAME}_arm64" \
+    "$MACOS_DIR/${APP_NAME}_x86_64" \
+    -output "$MACOS_DIR/$APP_NAME"
+rm "$MACOS_DIR/${APP_NAME}_arm64" "$MACOS_DIR/${APP_NAME}_x86_64"
+
+echo "✅ Created universal binary"
+
+# Ad-hoc code sign the app bundle
+codesign --force --deep --sign - "$APP_BUNDLE"
+echo "✅ Code signed (ad-hoc)"
 
 # Create Info.plist
 cat > "$CONTENTS/Info.plist" << 'EOF'
