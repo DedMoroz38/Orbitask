@@ -154,20 +154,24 @@ class TaskPopoverNode: SKNode {
         y -= 0.5 + sepSpacing
 
         // Info row: date left, priority right
-        let calIconSize: CGFloat = 11
+        let calIconSize: CGFloat = 16
         let calIconSpacing: CGFloat = 4
+        // Icon top-aligned with the row; labels use .baseline offset so caps
+        // optically align with the icon center (baseline ≈ iconCenter - capHeight/2).
+        let calIconCenterY = y - calIconSize / 2
+        let labelBaselineY = calIconCenterY - 5 // 4pt ≈ half cap-height for 11pt font
         if let calIcon = makeCalendarIconNode(size: calIconSize) {
-            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: y - calIconSize / 2)
+            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: calIconCenterY)
             calIcon.zPosition = 5
             addChild(calIcon)
         }
         let dateLabel = SKLabelNode(fontNamed: "Helvetica Neue")
         dateLabel.text = dueString
         dateLabel.fontSize = 11
-        dateLabel.fontColor = NSColor(white: 1.0, alpha: 0.65)
+        dateLabel.fontColor = NSColor(white: 1.0, alpha: 1.0)
         dateLabel.horizontalAlignmentMode = .left
-        dateLabel.verticalAlignmentMode = .top
-        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: y)
+        dateLabel.verticalAlignmentMode = .baseline
+        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: labelBaselineY)
         dateLabel.zPosition = 5
         addChild(dateLabel)
 
@@ -176,8 +180,8 @@ class TaskPopoverNode: SKNode {
         priorityLabel.fontSize = 11
         priorityLabel.fontColor = Cosmic.priorityColor(task.priority)
         priorityLabel.horizontalAlignmentMode = .right
-        priorityLabel.verticalAlignmentMode = .top
-        priorityLabel.position = CGPoint(x: Self.popoverWidth / 2 - Self.padding, y: y)
+        priorityLabel.verticalAlignmentMode = .baseline
+        priorityLabel.position = CGPoint(x: Self.popoverWidth / 2 - Self.padding, y: labelBaselineY - 5)
         priorityLabel.zPosition = 5
         addChild(priorityLabel)
         y -= infoRowHeight
@@ -356,20 +360,22 @@ class TaskEditPopoverNode: SKNode {
 
         // ── Info row: date + priority ──
         y -= sepSpacing
-        let calIconSize: CGFloat = 11
+        let calIconSize: CGFloat = 16
         let calIconSpacing: CGFloat = 4
+        let calIconCenterY = y - calIconSize / 2
+        let labelBaselineY = calIconCenterY - 4
         if let calIcon = makeCalendarIconNode(size: calIconSize) {
-            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: y - calIconSize / 2)
+            calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: calIconCenterY)
             calIcon.zPosition = 5
             addChild(calIcon)
         }
         let dateLabel = SKLabelNode(fontNamed: "Helvetica Neue")
         dateLabel.text = dueString
         dateLabel.fontSize = 11
-        dateLabel.fontColor = NSColor(white: 1.0, alpha: 0.65)
+        dateLabel.fontColor = NSColor(white: 1.0, alpha: 1.0)
         dateLabel.horizontalAlignmentMode = .left
-        dateLabel.verticalAlignmentMode = .top
-        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: y)
+        dateLabel.verticalAlignmentMode = .baseline
+        dateLabel.position = CGPoint(x: leftX + calIconSize + calIconSpacing, y: labelBaselineY)
         dateLabel.zPosition = 5
         addChild(dateLabel)
 
@@ -378,8 +384,8 @@ class TaskEditPopoverNode: SKNode {
         priorityLabel.fontSize = 11
         priorityLabel.fontColor = Cosmic.priorityColor(task.priority)
         priorityLabel.horizontalAlignmentMode = .right
-        priorityLabel.verticalAlignmentMode = .top
-        priorityLabel.position = CGPoint(x: rightX, y: y)
+        priorityLabel.verticalAlignmentMode = .baseline
+        priorityLabel.position = CGPoint(x: rightX, y: labelBaselineY)
         priorityLabel.zPosition = 5
         addChild(priorityLabel)
         y -= infoRowHeight
