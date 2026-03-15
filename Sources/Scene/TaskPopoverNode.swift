@@ -412,7 +412,7 @@ class TaskEditPopoverNode: SKNode {
             linkButtonRect = makeButton(
                 title: "🔗  Open Link", x: leftX, y: y - Self.buttonHeight,
                 width: totalButtonWidth, height: Self.buttonHeight,
-                color: NSColor(red: 0.4, green: 0.75, blue: 1.0, alpha: 1.0)
+                color: white
             )
             y -= Self.buttonHeight + Self.buttonSpacing
         }

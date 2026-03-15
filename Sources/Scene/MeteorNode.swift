@@ -24,13 +24,13 @@ class MeteorNode: SKNode {
     /// Whether this meteor is selected (edit popover open)
     var isSelected: Bool = false
 
-    init(task: CosmicTask) {
+    init(task: CosmicTask, startAngle: CGFloat? = nil) {
         self.task = task
 
         // Calculate orbit position from urgency
         let urgency = CGFloat(task.urgency())
         self.orbitRadius = Cosmic.outerOrbit - urgency * (Cosmic.outerOrbit - Cosmic.innerOrbit)
-        self.orbitAngle = CGFloat.random(in: 0...(2 * .pi))
+        self.orbitAngle = startAngle ?? CGFloat.random(in: 0...(2 * .pi))
 
         // Size scales with priority
         let sizeMultiplier: CGFloat = {

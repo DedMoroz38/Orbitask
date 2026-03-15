@@ -12,7 +12,7 @@ enum Cosmic {
     static let meteorMaxSize: CGFloat = 120.0
 
     // Orbit radii — meteors range from outerOrbit (urgency 0) to innerOrbit (urgency 1)
-    static let innerOrbit: CGFloat = 100.0
+    static let innerOrbit: CGFloat = 150.0
     static let outerOrbit: CGFloat = 420.0
 
     // Animation

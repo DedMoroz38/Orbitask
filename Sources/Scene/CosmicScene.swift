@@ -95,9 +95,11 @@ class CosmicScene: SKScene {
             meteorNodes[id] = nil
         }
 
-        // Add new meteors
+        // Add new meteors with spacing
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
         for task in tasks where meteorNodes[task.id] == nil {
-            let meteor = MeteorNode(task: task)
+            let angle = bestAngle(for: task, center: center)
+            let meteor = MeteorNode(task: task, startAngle: angle)
             meteor.zPosition = 20
             addChild(meteor)
             meteorNodes[task.id] = meteor
@@ -106,6 +108,44 @@ class CosmicScene: SKScene {
             meteor.alpha = 0
             meteor.run(SKAction.fadeIn(withDuration: 0.5))
         }
+    }
+
+    /// Pick the orbit angle that maximises the minimum screen-space distance
+    /// to every existing meteor. Tests evenly-spaced candidates around the full
+    /// circle and returns the best one.
+    private func bestAngle(for task: CosmicTask, center: CGPoint) -> CGFloat {
+        let radius = Cosmic.outerOrbit - CGFloat(task.urgency()) * (Cosmic.outerOrbit - Cosmic.innerOrbit)
+
+        // Collect positions of all existing meteors
+        let existingPositions = meteorNodes.values.map { $0.position }
+        guard !existingPositions.isEmpty else {
+            return CGFloat.random(in: 0...(2 * .pi))
+        }
+
+        let candidates = 36  // test every 10°
+        var bestAngle: CGFloat = 0
+        var bestMinDist: CGFloat = -1
+
+        for i in 0..<candidates {
+            let angle = CGFloat(i) * (2 * .pi / CGFloat(candidates))
+            let pos = CGPoint(x: center.x + cos(angle) * radius,
+                              y: center.y + sin(angle) * radius)
+
+            var minDist: CGFloat = .greatestFiniteMagnitude
+            for existing in existingPositions {
+                let dx = pos.x - existing.x
+                let dy = pos.y - existing.y
+                let dist = sqrt(dx * dx + dy * dy)
+                if dist < minDist { minDist = dist }
+            }
+
+            if minDist > bestMinDist {
+                bestMinDist = minDist
+                bestAngle = angle
+            }
+        }
+
+        return bestAngle
     }
 
     @objc private func tasksDidChange() {
