@@ -275,6 +275,12 @@ class CosmicScene: SKScene {
                 case .delete:
                     dismissEditPopover()
                     TaskManager.shared.delete(taskID)
+                case .openLink:
+                    let link = ep.task.link
+                    let urlString = link.contains("://") ? link : "https://\(link)"
+                    if let url = URL(string: urlString) {
+                        NSWorkspace.shared.open(url)
+                    }
                 }
                 return
             }

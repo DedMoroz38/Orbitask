@@ -209,7 +209,7 @@ class TaskPopoverNode: SKNode {
 /// A popover that appears when clicking a meteor, with action buttons.
 /// Card-style design with frosted glass background.
 class TaskEditPopoverNode: SKNode {
-    enum Action { case complete, delete }
+    enum Action { case complete, delete, openLink }
 
     private static let popoverWidth: CGFloat = 260
     private static let cornerRadius: CGFloat = 18
@@ -220,8 +220,10 @@ class TaskEditPopoverNode: SKNode {
     /// Returns the height this popover will occupy for a given task.
     static func preferredHeight(for task: CosmicTask) -> CGFloat {
         let hasDesc = !task.description.isEmpty
+        let hasLink = !task.link.isEmpty
         let descHeight: CGFloat = hasDesc ? 16 : 0
         let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let linkRow: CGFloat = hasLink ? buttonHeight + buttonSpacing : 0
         let sepSpacing: CGFloat = 10
         let buttonsArea: CGFloat = buttonHeight
         return padding
@@ -230,6 +232,7 @@ class TaskEditPopoverNode: SKNode {
             + sepSpacing
             + 18                               // infoRowHeight
             + sepSpacing + 0.5 + sepSpacing    // separator
+            + linkRow
             + buttonsArea
             + padding
     }
@@ -239,6 +242,7 @@ class TaskEditPopoverNode: SKNode {
     /// Rectangles for hit testing (in local coordinates)
     private var completeButtonRect: CGRect = .zero
     private var deleteButtonRect: CGRect = .zero
+    private var linkButtonRect: CGRect = .zero
     private var totalHeight: CGFloat = 0
 
     init(task: CosmicTask, backgroundTexture: SKTexture? = nil) {
@@ -252,11 +256,13 @@ class TaskEditPopoverNode: SKNode {
         // Layout measurements
         let titleHeight: CGFloat = 20
         let hasDesc = !task.description.isEmpty
+        let hasLink = !task.link.isEmpty
         let descHeight: CGFloat = hasDesc ? 16 : 0
         let descSpacing: CGFloat = hasDesc ? 6 : 0
         let sepSpacing: CGFloat = 10
         let infoRowHeight: CGFloat = 18
         let buttonsArea: CGFloat = Self.buttonHeight
+        let linkRow: CGFloat = hasLink ? Self.buttonHeight + Self.buttonSpacing : 0
 
         totalHeight = Self.padding
             + titleHeight
@@ -264,6 +270,7 @@ class TaskEditPopoverNode: SKNode {
             + sepSpacing
             + infoRowHeight
             + sepSpacing + 0.5 + sepSpacing    // separator
+            + linkRow
             + buttonsArea
             + Self.padding
 
@@ -400,6 +407,16 @@ class TaskEditPopoverNode: SKNode {
         let halfButtonWidth = (totalButtonWidth - Self.buttonSpacing) / 2
         let white = NSColor.white
 
+        // Link button (full width, shown only when link exists)
+        if hasLink {
+            linkButtonRect = makeButton(
+                title: "🔗  Open Link", x: leftX, y: y - Self.buttonHeight,
+                width: totalButtonWidth, height: Self.buttonHeight,
+                color: NSColor(red: 0.4, green: 0.75, blue: 1.0, alpha: 1.0)
+            )
+            y -= Self.buttonHeight + Self.buttonSpacing
+        }
+
         completeButtonRect = makeButton(
             title: "✓  Complete", x: leftX, y: y - Self.buttonHeight,
             width: halfButtonWidth, height: Self.buttonHeight,
@@ -453,6 +470,7 @@ class TaskEditPopoverNode: SKNode {
     /// Hit-tests a point in **scene** coordinates and returns the tapped action, if any.
     func hitTest(scenePoint: CGPoint) -> Action? {
         let local = convert(scenePoint, from: scene!)
+        if !linkButtonRect.isEmpty && linkButtonRect.contains(local) { return .openLink }
         if completeButtonRect.contains(local) { return .complete }
         if deleteButtonRect.contains(local) { return .delete }
         return nil

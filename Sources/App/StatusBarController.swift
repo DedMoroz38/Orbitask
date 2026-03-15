@@ -2,12 +2,13 @@ import Cocoa
 import SwiftUI
 
 /// Controls the menu bar status item and provides task management UI.
-class StatusBarController {
+class StatusBarController: NSObject {
     private var statusItem: NSStatusItem!
-    private var popover: NSPopover!
+    private var panel: NSPanel?
     private weak var scene: CosmicScene?
 
     init(scene: CosmicScene) {
+        super.init()
         self.scene = scene
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -17,36 +18,75 @@ class StatusBarController {
             button.action = #selector(togglePopover)
             button.target = self
         }
-
-        popover = NSPopover()
-        popover.contentSize = NSSize(width: 340, height: 480)
-        popover.behavior = .transient
-
-        let menuView = MenuBarView(onClose: { [weak self] in
-            self?.popover.performClose(nil)
-        })
-        let hc = NSHostingController(rootView: menuView)
-        hc.view.wantsLayer = true
-        popover.contentViewController = hc
     }
 
     @objc func togglePopover() {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(nil)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            // Clear the popover window's own background so our SwiftUI clipShape shows through
-            if let win = popover.contentViewController?.view.window {
-                win.backgroundColor = .clear
-                win.isOpaque = false
-            }
-            if let wrapper = popover.contentViewController?.view.superview {
-                wrapper.wantsLayer = true
-                wrapper.layer?.backgroundColor = NSColor.clear.cgColor
-            }
+        if let panel = panel, panel.isVisible {
+            panel.orderOut(nil)
+            self.panel = nil
+            return
         }
+
+        guard let button = statusItem.button,
+              let buttonWindow = button.window else { return }
+
+        let menuView = MenuBarView(onClose: { [weak self] in
+            self?.panel?.orderOut(nil)
+            self?.panel = nil
+        })
+
+        let hc = NSHostingController(rootView: menuView)
+        hc.view.wantsLayer = true
+
+        let panelWidth: CGFloat = 340
+        let panelHeight: CGFloat = 480
+        let buttonFrameInScreen = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        let originX = buttonFrameInScreen.midX - panelWidth / 2
+        let originY = buttonFrameInScreen.minY - panelHeight - 6
+
+        let p = KeyablePanel(
+            contentRect: NSRect(x: originX, y: originY, width: panelWidth, height: panelHeight),
+            styleMask: [.borderless, .utilityWindow],
+            backing: .buffered,
+            defer: false
+        )
+        p.isOpaque = false
+        p.backgroundColor = .clear
+        p.hasShadow = true
+        p.level = .popUpMenu
+        p.collectionBehavior = [.canJoinAllSpaces, .transient]
+        p.contentViewController = hc
+
+        // Dismiss when clicking outside
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidResignActive),
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+
+        NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self, weak p] _ in
+            guard let p = p, p.isVisible else { return }
+            self?.panel?.orderOut(nil)
+            self?.panel = nil
+        }
+
+        p.orderFrontRegardless()
+        p.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        self.panel = p
     }
+
+    @objc private func appDidResignActive() {
+        panel?.orderOut(nil)
+        panel = nil
+    }
+}
+
+/// Borderless panel that can still become key window to accept keyboard input.
+private class KeyablePanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
 }
 
 // MARK: - Visual Effect Background
@@ -181,9 +221,13 @@ struct MenuBarView: View {
                 VisualEffectView()
                 Color.black.opacity(0.55)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 40))
+            .clipShape(RoundedRectangle(cornerRadius: 30))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 40))
+        .clipShape(RoundedRectangle(cornerRadius: 30))
+        .overlay(
+            RoundedRectangle(cornerRadius: 30)
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+        )
     }
 }
 
@@ -401,12 +445,12 @@ struct AddTaskSheet: View {
             ZStack {
                 // Blurry frosted glass fill
                 VisualEffectView()
-                    .clipShape(RoundedRectangle(cornerRadius: 25))
+                    .clipShape(RoundedRectangle(cornerRadius: 30))
                 // Dark tint over the blur
-                RoundedRectangle(cornerRadius: 25)
+                RoundedRectangle(cornerRadius: 30)
                     .fill(Color.black.opacity(0.45))
                 // Border
-                RoundedRectangle(cornerRadius: 25)
+                RoundedRectangle(cornerRadius: 30)
                     .stroke(Color.white.opacity(0.14), lineWidth: 1)
             }
         )
