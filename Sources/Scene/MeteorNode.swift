@@ -251,59 +251,6 @@ class MeteorNode: SKNode {
         return emitter
     }
 
-    /// Animates the meteor flying into the planet on completion.
-    /// Only the meteor sprite rotates; flame direction tracks the planet independently.
-    func animateCompletion(toward center: CGPoint, in scene: SKScene, completion: @escaping () -> Void) {
-        let startPosition = self.position
-        let duration: Double = 1.4
-
-        // Stop ambient animations that would fight the completion sequence
-        pulseRing.removeAllActions()
-        label.removeAllActions()
-        meteorSprite.removeAllActions()
-
-        // Spin only the meteor sprite — flames are children of self, not meteorSprite, so they are unaffected
-        meteorSprite.run(SKAction.repeatForever(
-            SKAction.rotate(byAngle: -.pi * 4, duration: 1.0)   // 2 full spins per second
-        ))
-
-        // Fade label out quickly
-        label.run(SKAction.fadeOut(withDuration: 0.25))
-
-        let travel = SKAction.customAction(withDuration: duration) { [weak self] node, elapsed in
-            guard let self = self else { return }
-            let t = CGFloat(elapsed) / CGFloat(duration)          // 0 → 1
-            let eased = 1 - pow(1 - t, 3)                        // cubic ease-in (accelerates toward planet)
-
-            // Move whole node toward planet center
-            let newX = startPosition.x + (center.x - startPosition.x) * eased
-            let newY = startPosition.y + (center.y - startPosition.y) * eased
-            node.position = CGPoint(x: newX, y: newY)
-
-            // Shrink and fade as it nears the planet
-            node.setScale(max(0, 1.0 - t * 0.85))
-            node.alpha = max(0, 1.0 - t * 1.3)
-
-            // Recalculate flame direction based on live position → keep pointing away from planet
-            let angle = atan2(newY - center.y, newX - center.x)
-            self.backFlame.emissionAngle = angle
-            self.frontFlame.emissionAngle = angle
-            self.backFlame.particleRotation = angle - .pi / 2
-            self.frontFlame.particleRotation = angle - .pi / 2
-            let backOff = self.meteorSize * 0.35
-            let frontOff = self.meteorSize * 0.48
-            self.backFlame.position = CGPoint(x: cos(angle) * backOff, y: sin(angle) * backOff)
-            self.frontFlame.position = CGPoint(x: cos(angle) * frontOff, y: sin(angle) * frontOff)
-        }
-
-        run(travel) { [weak self] in
-            guard let self = self else { return }
-            self.removeFromParent()
-            ExplosionEffect.explode(at: center, color: Cosmic.priorityColor(self.task.priority), in: scene)
-            completion()
-        }
-    }
-
     /// Hit-test area matches the visible meteor sprite bounds.
     override func contains(_ point: CGPoint) -> Bool {
         let localPoint = convert(point, from: scene!)

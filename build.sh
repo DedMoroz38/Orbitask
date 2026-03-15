@@ -16,6 +16,7 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 
 # Copy image assets
 cp meteor.png "$RESOURCES_DIR/"
+cp planet.png "$RESOURCES_DIR/"
 cp Resources/calendar.png "$RESOURCES_DIR/"
 
 # Compile all Swift sources into one binary

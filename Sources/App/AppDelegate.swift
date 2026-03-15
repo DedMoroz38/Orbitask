@@ -8,12 +8,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Global event monitors — fire regardless of which app is active
     private var globalMoveMonitor: Any?
     private var globalClickMonitor: Any?
+    private var globalDragMonitor: Any?
+    private var globalMouseUpMonitor: Any?
     private var localMoveMonitor: Any?
     private var localClickMonitor: Any?
-
-    // Double-click detection
-    private var lastClickTime: TimeInterval = 0
-    private var lastClickPos: CGPoint = .zero
+    private var localDragMonitor: Any?
+    private var localMouseUpMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         rebuildWindows()
@@ -84,6 +84,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
             self?.handleClick()
         }
+        globalDragMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDragged) { [weak self] _ in
+            self?.handleDrag()
+        }
+        globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in
+            self?.handleMouseUp()
+        }
         // Local monitors: our own app is active (menu bar popover open, etc.)
         localMoveMonitor = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
             self?.handleMove()
@@ -91,6 +97,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
             self?.handleClick()
+            return event
+        }
+        localDragMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDragged) { [weak self] event in
+            self?.handleDrag()
+            return event
+        }
+        localMouseUpMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp) { [weak self] event in
+            self?.handleMouseUp()
             return event
         }
     }
@@ -111,35 +125,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func handleClick() {
         let screenPt = NSEvent.mouseLocation
-        let now = ProcessInfo.processInfo.systemUptime
-        let isDouble = (now - lastClickTime) < 0.35
-            && lastClickPos.distance(to: screenPt) < 8
-        lastClickTime = now
-        lastClickPos = screenPt
-
-        guard isDouble else {
-            // Single click — open edit popover
-            for entry in desktopWindows {
-                if entry.window.frame.contains(screenPt) {
-                    let viewPt = CGPoint(
-                        x: screenPt.x - entry.window.frame.origin.x,
-                        y: screenPt.y - entry.window.frame.origin.y
-                    )
-                    entry.scene.handleClickAt(viewPt)
-                    return
-                }
-            }
-            return
-        }
         for entry in desktopWindows {
             if entry.window.frame.contains(screenPt) {
                 let viewPt = CGPoint(
                     x: screenPt.x - entry.window.frame.origin.x,
                     y: screenPt.y - entry.window.frame.origin.y
                 )
-                entry.scene.handleDoubleClickAt(viewPt)
+                entry.scene.handleMouseDownAt(viewPt)
                 return
             }
         }
+    }
+
+    private func handleDrag() {
+        let screenPt = NSEvent.mouseLocation
+        for entry in desktopWindows {
+            if entry.window.frame.contains(screenPt) {
+                let viewPt = CGPoint(
+                    x: screenPt.x - entry.window.frame.origin.x,
+                    y: screenPt.y - entry.window.frame.origin.y
+                )
+                entry.scene.handleMouseDraggedAt(viewPt)
+                return
+            }
+        }
+    }
+
+    private func handleMouseUp() {
+        let screenPt = NSEvent.mouseLocation
+        for entry in desktopWindows {
+            if entry.window.frame.contains(screenPt) {
+                let viewPt = CGPoint(
+                    x: screenPt.x - entry.window.frame.origin.x,
+                    y: screenPt.y - entry.window.frame.origin.y
+                )
+                entry.scene.handleMouseUpAt(viewPt)
+                return
+            }
+        }
+        // If mouse is released outside any window, cancel drag
+        desktopWindows.first?.scene.cancelDrag()
     }
 }

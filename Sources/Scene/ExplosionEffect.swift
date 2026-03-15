@@ -61,24 +61,4 @@ class ExplosionEffect {
         let wait = SKAction.wait(forDuration: 2.0)
         emitter.run(SKAction.sequence([wait, SKAction.removeFromParent()]))
     }
-
-    /// Subtle absorption effect — meteor spirals into the planet.
-    static func absorb(node: SKNode, toward center: CGPoint, color: NSColor, in scene: SKScene, completion: @escaping () -> Void) {
-        let spiral = SKAction.customAction(withDuration: 0.6) { node, elapsed in
-            let progress = elapsed / 0.6
-            let currentRadius = node.position.distance(to: center) * (1 - progress)
-            let angle = CGFloat(elapsed) * 8.0  // Fast spiral
-            node.position = CGPoint(
-                x: center.x + cos(angle) * currentRadius,
-                y: center.y + sin(angle) * currentRadius
-            )
-            node.setScale(max(0, 1.0 - progress))
-            node.alpha = max(0, 1.0 - progress)
-        }
-
-        node.run(SKAction.sequence([spiral, SKAction.removeFromParent()])) {
-            ExplosionEffect.explode(at: center, color: color, in: scene)
-            completion()
-        }
-    }
 }
