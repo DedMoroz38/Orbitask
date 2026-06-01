@@ -1,4 +1,4 @@
-import Foundation
+import Cocoa
 
 /// Persists tasks to a JSON file in Application Support and provides CRUD operations.
 class TaskManager: ObservableObject {
@@ -72,24 +72,38 @@ class TaskManager: ObservableObject {
     // MARK: - Persistence
 
     private func save() {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .prettyPrinted
-        guard let data = try? encoder.encode(tasks) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = .prettyPrinted
+            let data = try encoder.encode(tasks)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            print("[TaskManager] save failed: \(error)")
+        }
     }
 
     private func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path),
-              let data = try? Data(contentsOf: fileURL) else {
-            // Seed with demo tasks on first launch
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
             seedDemoTasks()
             return
         }
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        if let decoded = try? decoder.decode([CosmicTask].self, from: data) {
-            tasks = decoded
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            tasks = try decoder.decode([CosmicTask].self, from: data)
+        } catch {
+            print("[TaskManager] load failed: \(error)")
+            DispatchQueue.main.async {
+                let alert = NSAlert()
+                alert.messageText = "Could not load tasks"
+                alert.informativeText = "Your tasks file could not be read and will be reset to defaults.\n\nError: \(error.localizedDescription)"
+                alert.alertStyle = .warning
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+            seedDemoTasks()
         }
     }
 

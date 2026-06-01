@@ -12,13 +12,47 @@ class CosmicScene: SKScene {
     private var editPopoverNode: TaskEditPopoverNode?
     private var lastUpdateTime: TimeInterval = 0
 
+    /// Serializes scene access between the per-display render thread (which calls
+    /// `update`/`render`) and the main thread (mouse + notification handlers).
+    /// Recursive because a locked mouse handler may complete a task, which posts a
+    /// notification that re-enters another locked handler on the same thread.
+    let sceneLock = NSRecursiveLock()
+
     // Drag-from-planet state
     private var isDraggingFromPlanet = false
 
     // Orbit ring guides
     private var orbitRings: [SKShapeNode] = []
 
-    override func didMove(to view: SKView) {
+    // Background texture cache for frosted-glass popovers
+    private var cachedBackgroundTexture: SKTexture?
+    private var backgroundTextureDirty = true
+
+    func invalidateBackgroundCache() { backgroundTextureDirty = true }
+
+    private func getBackgroundTexture(crop cropRect: CGRect) -> SKTexture? {
+        if backgroundTextureDirty {
+            cachedBackgroundTexture = view?.texture(from: self)
+            backgroundTextureDirty = false
+        }
+        guard let full = cachedBackgroundTexture else { return nil }
+        let normalizedRect = CGRect(
+            x: cropRect.origin.x / size.width,
+            y: cropRect.origin.y / size.height,
+            width: cropRect.width / size.width,
+            height: cropRect.height / size.height
+        )
+        return SKTexture(rect: normalizedRect, in: full)
+    }
+
+    private var didActivate = false
+
+    /// One-time scene setup. Called from `didMove(to:)` when presented in an SKView,
+    /// or explicitly by the SKRenderer-based render view (where `didMove` never fires).
+    func activate() {
+        guard !didActivate else { return }
+        didActivate = true
+
         backgroundColor = .clear
 
         setupStarfield()
@@ -31,13 +65,19 @@ class CosmicScene: SKScene {
         NotificationCenter.default.addObserver(self, selector: #selector(taskWasCompleted(_:)), name: .taskCompleted, object: nil)
     }
 
+    override func didMove(to view: SKView) {
+        activate()
+    }
+
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
+        sceneLock.lock(); defer { sceneLock.unlock() }
         guard planet != nil else { return }
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         planet.position = center
         starfield.populate(in: size)
         setupOrbitRings()
+        invalidateBackgroundCache()
     }
 
     // MARK: - Setup
@@ -108,6 +148,8 @@ class CosmicScene: SKScene {
             meteor.alpha = 0
             meteor.run(SKAction.fadeIn(withDuration: 0.5))
         }
+
+        invalidateBackgroundCache()
     }
 
     /// Pick the orbit angle that maximises the minimum screen-space distance
@@ -149,10 +191,12 @@ class CosmicScene: SKScene {
     }
 
     @objc private func tasksDidChange() {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         loadMeteors()
     }
 
     @objc private func taskWasCompleted(_ notification: Notification) {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         guard let taskID = notification.object as? UUID,
               let meteor = meteorNodes[taskID] else { return }
 
@@ -256,6 +300,7 @@ class CosmicScene: SKScene {
     // MARK: - Public Mouse Handlers (called from AppDelegate global monitors)
 
     func handleMouseAt(_ viewPoint: CGPoint) {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         // Don't update hover during drag
         guard !isDraggingFromPlanet else { return }
         let location = convertPoint(fromView: viewPoint)
@@ -287,6 +332,7 @@ class CosmicScene: SKScene {
     }
 
     func handleMouseDownAt(_ viewPoint: CGPoint) {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         let location = convertPoint(fromView: viewPoint)
 
         // Check if mouse down is on the planet — start drag
@@ -345,6 +391,7 @@ class CosmicScene: SKScene {
     }
 
     func handleMouseUpAt(_ viewPoint: CGPoint) {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         guard isDraggingFromPlanet else { return }
         isDraggingFromPlanet = false
         let location = convertPoint(fromView: viewPoint)
@@ -359,6 +406,7 @@ class CosmicScene: SKScene {
     }
 
     func cancelDrag() {
+        sceneLock.lock(); defer { sceneLock.unlock() }
         isDraggingFromPlanet = false
     }
 
@@ -410,7 +458,7 @@ class CosmicScene: SKScene {
                                           meteorRadius: meteor.meteorSize / 2,
                                           popoverWidth: w, popoverHeight: h)
         let cropRect = CGRect(x: anchor.x - w / 2, y: anchor.y, width: w, height: h)
-        let bgTex = view?.texture(from: self, crop: cropRect)
+        let bgTex = getBackgroundTexture(crop: cropRect)
 
         let pop = TaskPopoverNode(task: meteor.task, backgroundTexture: bgTex)
         pop.position = anchor
@@ -453,7 +501,7 @@ class CosmicScene: SKScene {
                                           meteorRadius: meteor.meteorSize / 2,
                                           popoverWidth: w, popoverHeight: h)
         let cropRect = CGRect(x: anchor.x - w / 2, y: anchor.y, width: w, height: h)
-        let bgTex = view?.texture(from: self, crop: cropRect)
+        let bgTex = getBackgroundTexture(crop: cropRect)
 
         let ep = TaskEditPopoverNode(task: meteor.task, backgroundTexture: bgTex)
         ep.position = anchor

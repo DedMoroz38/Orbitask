@@ -27,19 +27,30 @@ swiftc \
     -O \
     Sources/Models/CosmicTask.swift \
     Sources/Helpers/Constants.swift \
+    Sources/Helpers/Formatters.swift \
     Sources/Models/TaskManager.swift \
     Sources/Scene/StarfieldNode.swift \
     Sources/Scene/PlanetNode.swift \
     Sources/Scene/MeteorNode.swift \
     Sources/Scene/ExplosionEffect.swift \
     Sources/Scene/TaskPopoverNode.swift \
+    Sources/Scene/TaskEditPopoverNode.swift \
     Sources/Scene/CosmicScene.swift \
+    Sources/Scene/CosmicRenderView.swift \
+    Sources/Views/LiquidGlassPriorityPicker.swift \
+    Sources/Views/CosmicTextField.swift \
+    Sources/Views/CosmicDatePicker.swift \
+    Sources/Views/TaskRowView.swift \
+    Sources/Views/AddTaskSheet.swift \
+    Sources/Views/MenuBarView.swift \
     Sources/App/StatusBarController.swift \
     Sources/App/AppDelegate.swift \
     Sources/App/main.swift \
     -framework Cocoa \
     -framework SpriteKit \
-    -framework SwiftUI
+    -framework SwiftUI \
+    -framework MetalKit \
+    -framework Metal
 
 echo "✅ Compiled arm64 binary"
 
@@ -50,19 +61,30 @@ swiftc \
     -O \
     Sources/Models/CosmicTask.swift \
     Sources/Helpers/Constants.swift \
+    Sources/Helpers/Formatters.swift \
     Sources/Models/TaskManager.swift \
     Sources/Scene/StarfieldNode.swift \
     Sources/Scene/PlanetNode.swift \
     Sources/Scene/MeteorNode.swift \
     Sources/Scene/ExplosionEffect.swift \
     Sources/Scene/TaskPopoverNode.swift \
+    Sources/Scene/TaskEditPopoverNode.swift \
     Sources/Scene/CosmicScene.swift \
+    Sources/Scene/CosmicRenderView.swift \
+    Sources/Views/LiquidGlassPriorityPicker.swift \
+    Sources/Views/CosmicTextField.swift \
+    Sources/Views/CosmicDatePicker.swift \
+    Sources/Views/TaskRowView.swift \
+    Sources/Views/AddTaskSheet.swift \
+    Sources/Views/MenuBarView.swift \
     Sources/App/StatusBarController.swift \
     Sources/App/AppDelegate.swift \
     Sources/App/main.swift \
     -framework Cocoa \
     -framework SpriteKit \
-    -framework SwiftUI
+    -framework SwiftUI \
+    -framework MetalKit \
+    -framework Metal
 
 echo "✅ Compiled x86_64 binary"
 

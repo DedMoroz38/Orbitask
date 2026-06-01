@@ -268,33 +268,64 @@ window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .ful
 
 ---
 
-## Suggested Skills / Features to Build Next
+## Claude Code Skills
 
-These are sorted from lowest to highest implementation complexity.
+Four project-local skills live in `.claude/skills/`. Invoke them with a `/` prefix in Claude Code.
 
-### 1. Repeating tasks
-Add `recurrence: Recurrence?` to `CosmicTask` (`.daily`, `.weekly`, `.monthly`). When `TaskManager.complete()` is called, instead of marking done, schedule the next occurrence by advancing `dueDate`. No scene changes needed.
+### `/build` — [.claude/skills/build/SKILL.md](.claude/skills/build/SKILL.md)
 
-### 2. Task editing (not just complete/delete)
-`TaskEditPopoverNode` currently only has complete, delete, and open-link buttons. Add an "Edit" button that opens `AddTaskSheet` pre-filled with the task's data. `TaskManager.update()` already exists.
+Kills any running CosmicTasks instance, runs `./build.sh`, and surfaces Swift compiler errors grouped by file rather than dumping the raw log. Use this instead of running `build.sh` directly so errors are always presented consistently.
 
-### 3. Notifications / reminders
-Use `UserNotifications` framework. When a task crosses urgency thresholds (0.5, 0.8, 1.0) post a local notification. Store which thresholds have already fired in `CosmicTask` to avoid repeats.
+```
+/build           # build and launch
+/build --no-run  # compile only
+```
 
-### 4. iCloud sync
-Replace the local JSON file with `NSUbiquitousKeyValueStore` (for small task lists) or a `CloudKit` private database. `TaskManager` already isolates persistence — only `save()` and `load()` need changing.
+**Why useful:** `build.sh` compiles arm64 and x86_64 separately, so each error appears twice in the raw output. The skill deduplicates them and offers to fix the first error automatically.
 
-### 5. Customisable planet / theme
-Let users pick a planet texture, background tint, and star density from the menu bar panel. Store preferences in `UserDefaults`. `PlanetNode` and `StarfieldNode` already read from centralized constants — update those at runtime and call `starfield.populate()` / rebuild planet.
+---
 
-### 6. Drag-to-reorder priority in the panel
-The `MenuBarView` `LazyVStack` could become a `List` with `onMove` to reorder tasks or manually assign priority by dragging.
+### `/add-swift-file` — [.claude/skills/add-swift-file/SKILL.md](.claude/skills/add-swift-file/SKILL.md)
 
-### 7. Elliptical / inclined orbits
-Replace circular orbit math (`cos/sin` of a single angle) with a proper Keplerian ellipse parameterised by semi-major axis, eccentricity, and inclination angle per task. Visually richer; no data model changes needed.
+Creates a new Swift source file and wires it into **both** architecture sections of `build.sh` at the correct compile-order position. This is the most common footgun in this project — forgetting to add a file to one of the two `swiftc` invocations causes a mysterious "undefined symbol" error only on one architecture.
 
-### 8. SpriteKit physics for collisions
-Currently meteors are positioned manually. Switching to `SKPhysicsBody` with circular shapes + angular velocity would let tasks naturally repel each other instead of requiring `bestAngle()` placement at creation time only.
+```
+/add-swift-file Sources/Scene/RingNode.swift
+/add-swift-file Sources/Views/TaskRowView.swift
+```
+
+**Why useful:** `build.sh` has a fixed compile order (`Models → Helpers → Scene → Views → App`) and must be updated in two identical places. The skill knows the order rules and inserts the file correctly in both.
+
+---
+
+### `/seed-tasks` — [.claude/skills/seed-tasks/SKILL.md](.claude/skills/seed-tasks/SKILL.md)
+
+Writes a controlled set of tasks to `~/Library/Application Support/CosmicTasks/tasks.json` so you can reproduce a specific visual state without manually adding tasks through the UI. The running app picks up the change within one update cycle (~30 s).
+
+```
+/seed-tasks                    # default: one task per priority across urgency range
+/seed-tasks --preset crowded   # 12 tasks — tests bestAngle() and overlap avoidance
+/seed-tasks --preset urgent    # 4 critical tasks due within 1 hour — tests inner orbit crowding
+/seed-tasks --preset empty     # empty array — tests the no-tasks state
+/seed-tasks --preset single    # one medium task — minimal state for popover testing
+```
+
+**Why useful:** urgency depends on `Date.now`, so you can't test specific orbit positions by editing the JSON by hand — the dates have to be computed relative to the current time. The skill does that automatically.
+
+---
+
+### `/screenshot-app` — [.claude/skills/screenshot-app/SKILL.md](.claude/skills/screenshot-app/SKILL.md)
+
+Builds the app, waits for SpriteKit to render the first frame, captures the primary display with `screencapture`, and shows the image inline. The only reliable way to verify desktop overlay changes without switching away from the terminal.
+
+```
+/screenshot-app                  # build + screenshot
+/screenshot-app --no-build       # screenshot whatever is already running
+/screenshot-app --delay 3        # wait 3 s after launch before capturing
+/screenshot-app --display 1      # capture a secondary monitor (0-indexed)
+```
+
+**Why useful:** CosmicTasks renders below all app windows — you can't see it in a simulator or with a normal UI test. This skill captures the actual wallpaper layer.
 
 ---
 

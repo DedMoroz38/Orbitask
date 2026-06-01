@@ -215,13 +215,15 @@ class MeteorNode: SKNode {
         emitter.particleScaleSpeed = -0.45
         emitter.emissionAngle = 0
 
-        // yellow core → priority color → red-orange embers → transparent
+        // yellow core → priority color → darkened priority embers → transparent
+        let emberColor = color.blended(withFraction: 0.5, of: .black)?.withAlphaComponent(0.6)
+            ?? NSColor(red: 0.9, green: 0.25, blue: 0.1, alpha: 0.6)
         emitter.particleColorBlendFactor = 1.0
         emitter.particleColorSequence = SKKeyframeSequence(
             keyframeValues: [
                 NSColor(red: 1.0, green: 0.92, blue: 0.45, alpha: 1.0),
                 color,
-                NSColor(red: 0.9, green: 0.25, blue: 0.1, alpha: 0.6),
+                emberColor,
                 NSColor(red: 0.3, green: 0.08, blue: 0.02, alpha: 0.0)
             ],
             times: [0, 0.25, 0.65, 1.0]

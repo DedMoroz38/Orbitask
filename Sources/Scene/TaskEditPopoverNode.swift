@@ -1,37 +1,46 @@
 import SpriteKit
 
-// MARK: - Shared helpers
+/// A popover that appears when clicking a meteor, with action buttons.
+/// Card-style design with frosted glass background.
+class TaskEditPopoverNode: SKNode {
+    enum Action { case complete, delete, openLink }
 
-/// Loads calendar.png from the app bundle and returns an SKSpriteNode sized to `size` points.
-func makeCalendarIconNode(size: CGFloat) -> SKSpriteNode? {
-    guard let url = Bundle.main.url(forResource: "calendar", withExtension: "png"),
-          let image = NSImage(contentsOf: url) else { return nil }
-    let texture = SKTexture(image: image)
-    return SKSpriteNode(texture: texture, size: CGSize(width: size, height: size))
-}
-
-/// A SpriteKit-based popover that shows task details when hovering over a meteor.
-class TaskPopoverNode: SKNode {
     private static let popoverWidth: CGFloat = 260
     private static let cornerRadius: CGFloat = 18
     private static let padding: CGFloat = 16
+    private static let buttonHeight: CGFloat = 30
+    private static let buttonSpacing: CGFloat = 8
 
     /// Returns the height this popover will occupy for a given task.
     static func preferredHeight(for task: CosmicTask) -> CGFloat {
         let hasDesc = !task.description.isEmpty
+        let hasLink = !task.link.isEmpty
         let descHeight: CGFloat = hasDesc ? 16 : 0
         let descSpacing: CGFloat = hasDesc ? 6 : 0
+        let linkRow: CGFloat = hasLink ? buttonHeight + buttonSpacing : 0
         let sepSpacing: CGFloat = 10
+        let buttonsArea: CGFloat = buttonHeight
         return padding
             + 20                               // titleHeight
             + descSpacing + descHeight
+            + sepSpacing
+            + 18                               // infoRowHeight
             + sepSpacing + 0.5 + sepSpacing    // separator
-            + 16                               // infoRowHeight
-            + sepSpacing + 14                  // hintHeight
+            + linkRow
+            + buttonsArea
             + padding
     }
 
+    let task: CosmicTask
+
+    /// Rectangles for hit testing (in local coordinates)
+    private var completeButtonRect: CGRect = .zero
+    private var deleteButtonRect: CGRect = .zero
+    private var linkButtonRect: CGRect = .zero
+    private var totalHeight: CGFloat = 0
+
     init(task: CosmicTask, backgroundTexture: SKTexture? = nil) {
+        self.task = task
         super.init()
 
         let dueString = Formatters.shortDate.string(from: task.dueDate)
@@ -39,18 +48,22 @@ class TaskPopoverNode: SKNode {
         // Layout measurements
         let titleHeight: CGFloat = 20
         let hasDesc = !task.description.isEmpty
+        let hasLink = !task.link.isEmpty
         let descHeight: CGFloat = hasDesc ? 16 : 0
         let descSpacing: CGFloat = hasDesc ? 6 : 0
         let sepSpacing: CGFloat = 10
-        let infoRowHeight: CGFloat = 16
-        let hintHeight: CGFloat = 14
+        let infoRowHeight: CGFloat = 18
+        let buttonsArea: CGFloat = Self.buttonHeight
+        let linkRow: CGFloat = hasLink ? Self.buttonHeight + Self.buttonSpacing : 0
 
-        let totalHeight = Self.padding
+        totalHeight = Self.padding
             + titleHeight
             + descSpacing + descHeight
-            + sepSpacing + 0.5 + sepSpacing
+            + sepSpacing
             + infoRowHeight
-            + sepSpacing + hintHeight
+            + sepSpacing + 0.5 + sepSpacing    // separator
+            + linkRow
+            + buttonsArea
             + Self.padding
 
         let bgRect = CGRect(
@@ -60,7 +73,7 @@ class TaskPopoverNode: SKNode {
             height: totalHeight
         )
 
-        // Background: blurred scene capture (frosted glass) or opaque dark fallback
+        // ── Background: blurred scene capture (frosted glass) or opaque dark fallback ──
         if let bgTex = backgroundTexture {
             let blurEffect = SKEffectNode()
             blurEffect.shouldRasterize = true
@@ -74,6 +87,7 @@ class TaskPopoverNode: SKNode {
             blurEffect.addChild(bgSprite)
             addChild(blurEffect)
 
+            // Dark tint overlay so text and buttons stay readable
             let tint = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
             tint.fillColor = NSColor(white: 0.0, alpha: 0.50)
             tint.strokeColor = .clear
@@ -87,6 +101,7 @@ class TaskPopoverNode: SKNode {
             addChild(glassBg)
         }
 
+        // Subtle outer border
         let border = SKShapeNode(rect: bgRect, cornerRadius: Self.cornerRadius)
         border.fillColor = .clear
         border.strokeColor = NSColor(white: 1.0, alpha: 0.18)
@@ -94,13 +109,16 @@ class TaskPopoverNode: SKNode {
         border.zPosition = 2
         addChild(border)
 
+        // Inner light sheen for glass depth
         let sheen = SKShapeNode(rect: bgRect.insetBy(dx: 1, dy: 1), cornerRadius: Self.cornerRadius - 1)
         sheen.fillColor = NSColor(white: 1.0, alpha: 0.04)
         sheen.strokeColor = .clear
         sheen.zPosition = 2
         addChild(sheen)
 
+        // ── Content ──
         let leftX = -Self.popoverWidth / 2 + Self.padding
+        let rightX = Self.popoverWidth / 2 - Self.padding
         let maxTextWidth = Self.popoverWidth - Self.padding * 2
         var y = totalHeight - Self.padding
 
@@ -139,20 +157,12 @@ class TaskPopoverNode: SKNode {
             y -= descHeight
         }
 
-        // Separator
+        // ── Info row: date + priority ──
         y -= sepSpacing
-        let sep = SKShapeNode(rect: CGRect(x: leftX, y: y, width: Self.popoverWidth - Self.padding * 2, height: 0.5))
-        sep.fillColor = NSColor(white: 1.0, alpha: 0.1)
-        sep.strokeColor = .clear
-        sep.zPosition = 5
-        addChild(sep)
-        y -= 0.5 + sepSpacing
-
-        // Info row: date left, priority right
         let calIconSize: CGFloat = 16
         let calIconSpacing: CGFloat = 4
         let calIconCenterY = y - calIconSize / 2
-        let labelBaselineY = calIconCenterY - 5
+        let labelBaselineY = calIconCenterY - 4
         if let calIcon = makeCalendarIconNode(size: calIconSize) {
             calIcon.position = CGPoint(x: leftX + calIconSize / 2, y: calIconCenterY)
             calIcon.zPosition = 5
@@ -174,25 +184,99 @@ class TaskPopoverNode: SKNode {
         priorityLabel.fontColor = Cosmic.priorityColor(task.priority)
         priorityLabel.horizontalAlignmentMode = .right
         priorityLabel.verticalAlignmentMode = .baseline
-        priorityLabel.position = CGPoint(x: Self.popoverWidth / 2 - Self.padding, y: labelBaselineY - 5)
+        priorityLabel.position = CGPoint(x: rightX, y: labelBaselineY)
         priorityLabel.zPosition = 5
         addChild(priorityLabel)
         y -= infoRowHeight
 
-        // Hint
+        // ── Separator ──
         y -= sepSpacing
-        let hint = SKLabelNode(fontNamed: "Helvetica Neue")
-        hint.text = "Click for actions"
-        hint.fontSize = 9
-        hint.fontColor = NSColor.white.withAlphaComponent(0.3)
-        hint.horizontalAlignmentMode = .center
-        hint.verticalAlignmentMode = .top
-        hint.position = CGPoint(x: 0, y: y)
-        hint.zPosition = 5
-        addChild(hint)
+        addSeparator(at: y, leftX: leftX, width: maxTextWidth)
+        y -= 0.5 + sepSpacing
+
+        // ── Action buttons ──
+        let totalButtonWidth = Self.popoverWidth - Self.padding * 2
+        let halfButtonWidth = (totalButtonWidth - Self.buttonSpacing) / 2
+        let white = NSColor.white
+
+        // Link button (full width, shown only when link exists)
+        if hasLink {
+            linkButtonRect = makeButton(
+                title: "🔗  Open Link", x: leftX, y: y - Self.buttonHeight,
+                width: totalButtonWidth, height: Self.buttonHeight,
+                color: white
+            )
+            y -= Self.buttonHeight + Self.buttonSpacing
+        }
+
+        completeButtonRect = makeButton(
+            title: "✓  Complete", x: leftX, y: y - Self.buttonHeight,
+            width: halfButtonWidth, height: Self.buttonHeight,
+            color: white
+        )
+
+        deleteButtonRect = makeButton(
+            title: "✕  Delete", x: leftX + halfButtonWidth + Self.buttonSpacing, y: y - Self.buttonHeight,
+            width: halfButtonWidth, height: Self.buttonHeight,
+            color: white
+        )
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Helpers
+
+    private func addSeparator(at y: CGFloat, leftX: CGFloat, width: CGFloat) {
+        let sep = SKShapeNode(rect: CGRect(x: leftX, y: y, width: width, height: 0.5))
+        sep.fillColor = NSColor(white: 1.0, alpha: 0.1)
+        sep.strokeColor = .clear
+        sep.zPosition = 5
+        addChild(sep)
+    }
+
+    @discardableResult
+    private func makeButton(title: String, x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, color: NSColor) -> CGRect {
+        let rect = CGRect(x: x, y: y, width: width, height: height)
+        let bg = SKShapeNode(rect: rect, cornerRadius: 10)
+        bg.fillColor = color.withAlphaComponent(0.15)
+        bg.strokeColor = color.withAlphaComponent(0.35)
+        bg.lineWidth = 0.5
+        bg.zPosition = 3
+        addChild(bg)
+
+        let label = SKLabelNode(fontNamed: "Helvetica Neue Medium")
+        label.text = title
+        label.fontSize = 11
+        label.fontColor = color
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+        label.position = CGPoint(x: x + width / 2, y: y + height / 2)
+        label.zPosition = 4
+        addChild(label)
+
+        return rect
+    }
+
+    /// Hit-tests a point in **scene** coordinates and returns the tapped action, if any.
+    func hitTest(scenePoint: CGPoint) -> Action? {
+        let local = convert(scenePoint, from: scene!)
+        if !linkButtonRect.isEmpty && linkButtonRect.contains(local) { return .openLink }
+        if completeButtonRect.contains(local) { return .complete }
+        if deleteButtonRect.contains(local) { return .delete }
+        return nil
+    }
+
+    /// Whether the scene-coordinate point is inside the whole popover background.
+    func containsScenePoint(_ scenePoint: CGPoint) -> Bool {
+        let local = convert(scenePoint, from: scene!)
+        let localBounds = CGRect(
+            x: -Self.popoverWidth / 2 - 8,
+            y: -8,
+            width: Self.popoverWidth + 16,
+            height: totalHeight + 16
+        )
+        return localBounds.contains(local)
     }
 }
