@@ -139,8 +139,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func scenePoint(for screenPt: NSPoint, in entry: (window: NSWindow, view: CosmicRenderView)) -> CGPoint? {
         guard entry.window.frame.contains(screenPt) else { return nil }
-        let windowPt = entry.window.convertFromScreen(NSRect(origin: screenPt, size: .zero)).origin
-        return entry.view.convert(windowPt, from: nil)
+        // Window coordinates (origin bottom-left, Y up) match SpriteKit scene coordinates
+        // exactly when scaleMode=.resizeFill and scene.size=screen.frame.size.
+        // Do NOT call view.convert() — CosmicRenderView is layer-backed (wantsLayer=true),
+        // which would flip Y to top-left origin and break all hit tests.
+        return entry.window.convertFromScreen(NSRect(origin: screenPt, size: .zero)).origin
     }
 
     private func handleMove() {

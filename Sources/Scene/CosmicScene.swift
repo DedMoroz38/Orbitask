@@ -303,7 +303,9 @@ class CosmicScene: SKScene {
         sceneLock.lock(); defer { sceneLock.unlock() }
         // Don't update hover during drag
         guard !isDraggingFromPlanet else { return }
-        let location = convertPoint(fromView: viewPoint)
+        // viewPoint is already in scene coordinates (window coords = scene coords with resizeFill).
+        // convertPoint(fromView:) requires scene.view (SKView) which is nil with SKRenderer — skip it.
+        let location = viewPoint
         var closestMeteor: MeteorNode?
         var closestDist: CGFloat = .greatestFiniteMagnitude
 
@@ -333,7 +335,7 @@ class CosmicScene: SKScene {
 
     func handleMouseDownAt(_ viewPoint: CGPoint) {
         sceneLock.lock(); defer { sceneLock.unlock() }
-        let location = convertPoint(fromView: viewPoint)
+        let location = viewPoint
 
         // Check if mouse down is on the planet — start drag
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
@@ -394,7 +396,7 @@ class CosmicScene: SKScene {
         sceneLock.lock(); defer { sceneLock.unlock() }
         guard isDraggingFromPlanet else { return }
         isDraggingFromPlanet = false
-        let location = convertPoint(fromView: viewPoint)
+        let location = viewPoint
 
         // Check if released on a meteor — fire laser
         for (_, meteor) in meteorNodes {
