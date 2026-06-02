@@ -23,6 +23,8 @@ class MeteorNode: SKNode {
     var isHovered: Bool = false
     /// Whether this meteor is selected (edit popover open)
     var isSelected: Bool = false
+    /// Set to true during a fly-in animation so updatePosition() yields control to SKAction.
+    var isFlyingIn: Bool = false
 
     init(task: CosmicTask, startAngle: CGFloat? = nil) {
         self.task = task
@@ -130,6 +132,7 @@ class MeteorNode: SKNode {
 
     /// Updates the meteor's position on its orbit.
     func updatePosition(center: CGPoint, dt: TimeInterval) {
+        guard !isFlyingIn else { return }
         // Slowly drift along the orbit
         let speed = Cosmic.meteorDriftSpeed / max(orbitRadius, 1)
         orbitAngle += CGFloat(dt) * speed

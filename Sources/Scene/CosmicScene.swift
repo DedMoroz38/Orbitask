@@ -63,6 +63,7 @@ class CosmicScene: SKScene {
         // Listen for task changes
         NotificationCenter.default.addObserver(self, selector: #selector(tasksDidChange), name: .tasksDidChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(taskWasCompleted(_:)), name: .taskCompleted, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(taskReceivedFromBackend(_:)), name: .taskReceivedFromBackend, object: nil)
     }
 
     override func didMove(to view: SKView) {
@@ -193,6 +194,56 @@ class CosmicScene: SKScene {
     @objc private func tasksDidChange() {
         sceneLock.lock(); defer { sceneLock.unlock() }
         loadMeteors()
+    }
+
+    @objc private func taskReceivedFromBackend(_ notification: Notification) {
+        sceneLock.lock(); defer { sceneLock.unlock() }
+        guard let task = notification.object as? CosmicTask else { return }
+        addMeteorWithFlyIn(task)
+    }
+
+    /// Spawns a meteor from a random screen edge and animates it into orbital position.
+    /// Called for tasks arriving from the backend so they visually "fly in" rather than fade in.
+    private func addMeteorWithFlyIn(_ task: CosmicTask) {
+        guard meteorNodes[task.id] == nil else { return }
+
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let angle = bestAngle(for: task, center: center)
+        let meteor = MeteorNode(task: task, startAngle: angle)
+        meteor.zPosition = 20
+        meteor.isFlyingIn = true
+
+        let finalPos = CGPoint(
+            x: center.x + cos(angle) * meteor.orbitRadius,
+            y: center.y + sin(angle) * meteor.orbitRadius
+        )
+
+        meteor.position = randomEdgePoint()
+        meteor.alpha = 0
+
+        addChild(meteor)
+        meteorNodes[task.id] = meteor
+
+        let duration = TimeInterval.random(in: 0.8...1.2)
+        let move = SKAction.move(to: finalPos, duration: duration)
+        move.timingMode = .easeOut
+        let fade = SKAction.fadeIn(withDuration: duration * 0.4)
+
+        meteor.run(SKAction.group([move, fade])) { [weak meteor] in
+            meteor?.isFlyingIn = false
+        }
+
+        invalidateBackgroundCache()
+    }
+
+    private func randomEdgePoint() -> CGPoint {
+        let margin: CGFloat = 60
+        switch Int.random(in: 0...3) {
+        case 0: return CGPoint(x: CGFloat.random(in: 0...size.width), y: size.height + margin)
+        case 1: return CGPoint(x: CGFloat.random(in: 0...size.width), y: -margin)
+        case 2: return CGPoint(x: -margin, y: CGFloat.random(in: 0...size.height))
+        default: return CGPoint(x: size.width + margin, y: CGFloat.random(in: 0...size.height))
+        }
     }
 
     @objc private func taskWasCompleted(_ notification: Notification) {

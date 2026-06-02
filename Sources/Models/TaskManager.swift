@@ -129,4 +129,5 @@ class TaskManager: ObservableObject {
 extension Notification.Name {
     static let tasksDidChange = Notification.Name("tasksDidChange")
     static let taskCompleted = Notification.Name("taskCompleted")
+    static let taskReceivedFromBackend = Notification.Name("taskReceivedFromBackend")
 }

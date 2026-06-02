@@ -15,6 +15,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildWindows()
         statusBarController = StatusBarController(scene: desktopWindows.first!.view.cosmicScene)
         installEventMonitors()
+        BackendClient.shared.connect()
 
         NotificationCenter.default.addObserver(
             self,

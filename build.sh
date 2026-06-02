@@ -29,6 +29,7 @@ swiftc \
     Sources/Helpers/Constants.swift \
     Sources/Helpers/Formatters.swift \
     Sources/Models/TaskManager.swift \
+    Sources/Networking/BackendClient.swift \
     Sources/Scene/StarfieldNode.swift \
     Sources/Scene/PlanetNode.swift \
     Sources/Scene/MeteorNode.swift \
@@ -63,6 +64,7 @@ swiftc \
     Sources/Helpers/Constants.swift \
     Sources/Helpers/Formatters.swift \
     Sources/Models/TaskManager.swift \
+    Sources/Networking/BackendClient.swift \
     Sources/Scene/StarfieldNode.swift \
     Sources/Scene/PlanetNode.swift \
     Sources/Scene/MeteorNode.swift \
